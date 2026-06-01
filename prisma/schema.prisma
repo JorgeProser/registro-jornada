@@ -1,0 +1,226 @@
+// ============================================================
+// REGISTRO DE JORNADA — Database Schema
+// Compliant with: Real Decreto-ley 8/2019, RGPD (EU 2016/679)
+// Retention: 4-year mandatory minimum (Art. 21 RD 8/2019)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────
+
+enum Role {
+  EMPLOYEE
+  MANAGER   // HR Admin — can view all, correct records with audit
+  INSPECTOR // Labor Inspector — read-only access
+}
+
+enum BreakType {
+  REST      // Descanso general (≥15 min legally required after 6h)
+  LUNCH     // Pausa comida
+  MEDICAL   // Permiso médico
+  OTHER
+}
+
+enum AuditAction {
+  CORRECT_CLOCK_IN  // Admin corrected a wrong clock-in time
+  CORRECT_CLOCK_OUT // Admin corrected a wrong clock-out time
+  ADD_CLOCK_OUT     // Admin added missing clock-out (employee forgot)
+  ADD_CLOCK_IN      // Admin added missing clock-in
+  CANCEL_RECORD     // Admin marked record invalid (e.g., duplicate)
+  RESTORE_RECORD    // Admin restored a cancelled record
+}
+
+enum WorkLocation {
+  OFFICE        // Presencial en oficina
+  REMOTE        // Teletrabajo (Ley 10/2021)
+  DISPLACEMENT  // Desplazamiento / Visita cliente
+  OTHER
+}
+
+// ── Models ─────────────────────────────────────────────────
+
+model Company {
+  id         String   @id @default(cuid())
+  name       String
+  cif        String   @unique // Spanish company tax ID
+  address    String
+  postalCode String
+  city       String
+  province   String
+  country    String   @default("España")
+  logoUrl    String?
+  createdAt  DateTime @default(now())
+
+  users User[]
+
+  @@map("companies")
+}
+
+// RGPD: Only data strictly necessary for time-control compliance
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  surname       String
+  // NIF stored encrypted — RGPD Art.9 (not special category but sensitive)
+  nifEncrypted  String?
+  role          Role      @default(EMPLOYEE)
+  companyId     String
+  company       Company   @relation(fields: [companyId], references: [id])
+  department    String?
+  position      String?
+  weeklyHours   Int       @default(40) // contracted weekly hours — base for overtime calc
+  passwordHash  String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  // Soft delete: RGPD requires erasure capability but RD 8/2019 requires 4yr retention.
+  // Solution: anonymize PII on deletion but keep time records.
+  deletedAt     DateTime?
+  anonymizedAt  DateTime?
+
+  timeLogs   TimeLog[]
+  auditsMade AuditTrail[] @relation("auditor")
+  accounts   Account[]
+  sessions   Session[]
+
+  @@index([companyId])
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// NextAuth required tables
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ── Core Compliance Table ───────────────────────────────────
+//
+// IMMUTABILITY DESIGN:
+//   • No `updatedAt` field — changes are forbidden at DB level via trigger.
+//   • Employees can only create records (clock-in) and clock-out their own.
+//   • Admins can correct clockIn/clockOut via adminCorrectedClockIn/Out fields.
+//   • Every admin write MUST produce an AuditTrail row (enforced in API layer).
+//   • Effective clock-in = adminCorrectedClockIn ?? clockIn (same for out).
+//
+// RETENTION: createdAt index ensures efficient 4-year retention queries.
+// INSPECTION: workDate index enables efficient date-range queries for inspectors.
+
+model TimeLog {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  workDate DateTime @db.Date // date-only, for grouping & legal queries
+
+  // Original immutable values recorded at clock-in/out moment
+  clockIn  DateTime
+  clockOut DateTime?
+
+  // Admin-corrected values — set ONLY by MANAGER role + mandatory AuditTrail
+  // Effective value = adminCorrected ?? original
+  adminCorrectedClockIn  DateTime?
+  adminCorrectedClockOut DateTime?
+
+  isActive     Boolean      @default(true) // currently clocked in
+  isCancelled  Boolean      @default(false) // admin-marked invalid
+  location     WorkLocation @default(OFFICE)
+  ipAddress    String? // for remote-work audit trail (teletrabajo)
+  userAgent    String? // device info
+  notes        String?
+
+  createdAt DateTime @default(now())
+  // Deliberately NO updatedAt — DB trigger enforces append-only on original fields
+
+  breaks      Break[]
+  auditTrails AuditTrail[]
+
+  @@index([userId, workDate])
+  @@index([workDate])
+  @@index([createdAt]) // for 4-year retention scans
+  @@index([userId, isActive])
+  @@map("time_logs")
+}
+
+model Break {
+  id        String    @id @default(cuid())
+  timeLogId String
+  timeLog   TimeLog   @relation(fields: [timeLogId], references: [id])
+  type      BreakType @default(REST)
+  startTime DateTime
+  endTime   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([timeLogId])
+  @@map("breaks")
+}
+
+// ── Legally Required Audit Trail ───────────────────────────
+//
+// RD-ley 8/2019 + AEPD guidelines mandate full traceability.
+// This table is STRICTLY APPEND-ONLY — no updates, no deletes.
+// Every admin modification of a TimeLog creates one row here.
+// justification is NOT NULL — enforced at application AND DB level.
+
+model AuditTrail {
+  id            String      @id @default(cuid())
+  timeLogId     String
+  timeLog       TimeLog     @relation(fields: [timeLogId], references: [id])
+  auditorId     String
+  auditor       User        @relation("auditor", fields: [auditorId], references: [id])
+  changedAt     DateTime    @default(now())
+  action        AuditAction
+  fieldChanged  String // "clockIn" | "clockOut" | "status" etc.
+  oldValue      String? // ISO string or JSON — original value
+  newValue      String? // ISO string or JSON — corrected value
+  justification String // LEGALLY REQUIRED — cannot be empty
+  ipAddress     String?
+
+  @@index([timeLogId])
+  @@index([auditorId])
+  @@index([changedAt])
+  @@map("audit_trail")
+}
