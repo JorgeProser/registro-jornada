@@ -28,7 +28,7 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const log = await prisma.timeLog.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       breaks: { orderBy: { startTime: "asc" } },
       _count: { select: { auditTrails: true } },
@@ -92,7 +92,7 @@ export async function PATCH(
   const { fieldChanged, newValue, justification } = parsed.data;
 
   const log = await prisma.timeLog.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { breaks: true, _count: { select: { auditTrails: true } } },
   });
 

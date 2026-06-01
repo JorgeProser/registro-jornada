@@ -14,7 +14,7 @@ export async function POST(
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const breakRecord = await prisma.break.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { timeLog: { select: { userId: true } } },
   });
 

@@ -20,7 +20,7 @@ export async function POST(
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const log = await prisma.timeLog.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { breaks: true, _count: { select: { auditTrails: true } } },
   });
 
