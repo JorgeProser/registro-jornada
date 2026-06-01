@@ -121,7 +121,7 @@ function TimeLogRow({
       <td className="px-4 py-3">
         {log.isCancelled && <span className="badge badge-red">Anulado</span>}
         {!log.isCancelled && corrected && <span className="badge badge-amber">★ Corregido</span>}
-        {!log.isCancelled && !corrected && log.clockOut && (
+        {!log.isCancelled && !corrected && log.effectiveClockOut && (
           <span className="badge badge-green">Completo</span>
         )}
         {!log.isCancelled && log.isActive && (
