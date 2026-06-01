@@ -48,7 +48,7 @@ export async function POST(
   const parsed = ClockOutSchema.safeParse(body);
 
   const updated = await prisma.timeLog.update({
-    where: { id: params.id },
+    where: { id: id },
     data: {
       clockOut: new Date(),
       isActive: false,

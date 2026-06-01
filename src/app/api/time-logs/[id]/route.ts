@@ -125,13 +125,13 @@ export async function PATCH(
   // Atomic: update TimeLog + create AuditTrail in a transaction
   const [updatedLog] = await prisma.$transaction([
     prisma.timeLog.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: { breaks: true, _count: { select: { auditTrails: true } } },
     }),
     prisma.auditTrail.create({
       data: {
-        timeLogId: params.id,
+        timeLogId: id,
         auditorId: session.user.id,
         action,
         fieldChanged,
@@ -172,12 +172,12 @@ export async function DELETE(
 
   await prisma.$transaction([
     prisma.timeLog.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { isCancelled: true, isActive: false },
     }),
     prisma.auditTrail.create({
       data: {
-        timeLogId: params.id,
+        timeLogId: id,
         auditorId: session.user.id,
         action: AuditAction.CANCEL_RECORD,
         fieldChanged: "status",

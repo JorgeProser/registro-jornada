@@ -29,7 +29,7 @@ export async function POST(
   }
 
   const updated = await prisma.break.update({
-    where: { id: params.id },
+    where: { id },
     data: { endTime: new Date() },
   });
 
