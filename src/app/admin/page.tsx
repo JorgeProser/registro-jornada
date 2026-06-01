@@ -261,7 +261,7 @@ function AdminTimeLogTable({
                   {!log.isCancelled && corrected && <span className="badge badge-amber">★ Corregido</span>}
                   {!log.isCancelled && !corrected && !log.isActive && <span className="badge badge-green">OK</span>}
                   {log.isActive && <span className="badge badge-green animate-pulse">Activo</span>}
-                  {!log.clockOut && !log.isActive && !log.isCancelled && (
+                  {!log.effectiveClockOut && !log.isActive && !log.isCancelled && (
                     <span className="badge badge-red">Sin salida</span>
                   )}
                 </td>
