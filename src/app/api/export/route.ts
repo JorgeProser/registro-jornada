@@ -186,7 +186,7 @@ async function generatePDF(
       },
       didParseCell(data) {
         // Highlight corrected rows in amber
-        if (data.section === "body" && data.row.raw[6] === "★") {
+        if (data.section === "body" && Array.isArray(data.row.raw) && data.row.raw[6] === "★") {
           data.cell.styles.fillColor = [254, 243, 199];
         }
       },
