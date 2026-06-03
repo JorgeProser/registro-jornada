@@ -181,7 +181,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="p-6 space-y-4">
           <p className="text-sm text-slate-600 leading-relaxed">
-            Las contraseñas son gestionadas por el administrador. Contacta con RRHH
+            Las contraseñas son gestionadas por el administrador. Contacta con Jorge García
             para restablecer la tuya.
           </p>
           <button onClick={onClose} className="btn-primary w-full mt-1">
