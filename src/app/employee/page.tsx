@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/Navbar";
 import { ClockWidget } from "@/components/ClockWidget";
 import { TimeLogTable } from "@/components/TimeLogTable";
+import { RequestEditModal } from "@/components/RequestEditModal";
 import type { TimeLogDto } from "@/types";
 import { minutesToHHMM } from "@/lib/client-utils";
 
@@ -12,6 +13,7 @@ export default function EmployeeDashboard() {
   const { data: session } = useSession();
   const [logs, setLogs] = useState<TimeLogDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editRequestLog, setEditRequestLog] = useState<TimeLogDto | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
@@ -128,16 +130,28 @@ export default function EmployeeDashboard() {
           {loading ? (
             <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Cargando registros...</div>
           ) : (
-            <TimeLogTable logs={logs} showAuditButton={true} />
+            <TimeLogTable
+            logs={logs}
+            showAuditButton={true}
+            onEditRequest={(log) => setEditRequestLog(log)}
+          />
           )}
         </div>
 
         {/* Legal notice */}
         <p className="mt-6 text-center text-xs text-gray-400 dark:text-slate-600">
-          Conforme al Real Decreto-ley 8/2019 · Los registros son inmutables por el empleado ·
+          Conforme al Real Decreto-ley 8/2019 · Las correcciones requieren aprobación del superadmin ·
           Conservación: 4 años · Ley 10/2021 (teletrabajo)
         </p>
       </main>
+
+      {editRequestLog && (
+        <RequestEditModal
+          log={editRequestLog}
+          onClose={() => setEditRequestLog(null)}
+          onSuccess={fetchLogs}
+        />
+      )}
     </div>
   );
 }

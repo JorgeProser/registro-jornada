@@ -10,6 +10,9 @@ const ACTION_LABELS: Record<string, string> = {
   ADD_CLOCK_IN: "Añadir entrada olvidada",
   CANCEL_RECORD: "Registro anulado",
   RESTORE_RECORD: "Registro restaurado",
+  EMPLOYEE_EDIT_REQUESTED: "Solicitud de corrección (empleado)",
+  EMPLOYEE_EDIT_APPROVED: "Corrección aprobada por superadmin",
+  EMPLOYEE_EDIT_REJECTED: "Solicitud rechazada por superadmin",
 };
 
 export function AuditModal({

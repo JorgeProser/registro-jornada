@@ -7,6 +7,7 @@ import { AuditModal } from "./AuditModal";
 interface Props {
   logs: TimeLogDto[];
   showAuditButton?: boolean;
+  onEditRequest?: (log: TimeLogDto) => void;
 }
 
 const LOCATION_ES: Record<string, string> = {
@@ -16,7 +17,7 @@ const LOCATION_ES: Record<string, string> = {
   OTHER: "Otro",
 };
 
-export function TimeLogTable({ logs, showAuditButton = false }: Props) {
+export function TimeLogTable({ logs, showAuditButton = false, onEditRequest }: Props) {
   const [auditLogId, setAuditLogId] = useState<string | null>(null);
 
   if (logs.length === 0) {
@@ -40,7 +41,7 @@ export function TimeLogTable({ logs, showAuditButton = false }: Props) {
               <th className="px-4 py-3">Efectivas</th>
               <th className="px-4 py-3">Modalidad</th>
               <th className="px-4 py-3">Estado</th>
-              {showAuditButton && <th className="px-4 py-3">Historial</th>}
+              {(showAuditButton || onEditRequest) && <th className="px-4 py-3">Acciones</th>}
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -50,6 +51,7 @@ export function TimeLogTable({ logs, showAuditButton = false }: Props) {
                 log={log}
                 showAuditButton={showAuditButton}
                 onAudit={() => setAuditLogId(log.id)}
+                onEditRequest={onEditRequest ? () => onEditRequest(log) : undefined}
               />
             ))}
           </tbody>
@@ -70,10 +72,12 @@ function TimeLogRow({
   log,
   showAuditButton,
   onAudit,
+  onEditRequest,
 }: {
   log: TimeLogDto;
   showAuditButton: boolean;
   onAudit: () => void;
+  onEditRequest?: () => void;
 }) {
   const corrected = log.effectiveClockIn !== log.originalClockIn || log.effectiveClockOut !== log.originalClockOut;
 
@@ -128,16 +132,26 @@ function TimeLogRow({
           <span className="badge badge-green animate-pulse">Activo</span>
         )}
       </td>
-      {showAuditButton && (
+      {(showAuditButton || onEditRequest) && (
         <td className="px-4 py-3">
-          {log.hasAuditTrail && (
-            <button
-              onClick={onAudit}
-              className="text-xs text-brand-600 hover:underline font-medium"
-            >
-              Ver auditoría
-            </button>
-          )}
+          <div className="flex flex-col gap-1">
+            {showAuditButton && log.hasAuditTrail && (
+              <button
+                onClick={onAudit}
+                className="text-xs text-brand-600 hover:underline font-medium text-left"
+              >
+                Ver auditoría
+              </button>
+            )}
+            {onEditRequest && !log.isActive && !log.isCancelled && (
+              <button
+                onClick={onEditRequest}
+                className="text-xs text-amber-600 hover:underline font-medium text-left"
+              >
+                Solicitar corrección
+              </button>
+            )}
+          </div>
         </td>
       )}
     </tr>

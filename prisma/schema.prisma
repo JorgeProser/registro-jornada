@@ -37,6 +37,15 @@ enum AuditAction {
   ADD_CLOCK_IN      // Admin added missing clock-in
   CANCEL_RECORD     // Admin marked record invalid (e.g., duplicate)
   RESTORE_RECORD    // Admin restored a cancelled record
+  EMPLOYEE_EDIT_REQUESTED  // Employee submitted a correction request
+  EMPLOYEE_EDIT_APPROVED   // Superadmin approved and applied employee request
+  EMPLOYEE_EDIT_REJECTED   // Superadmin rejected employee request
+}
+
+enum EditRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum WorkLocation {
@@ -90,10 +99,12 @@ model User {
   deletedAt     DateTime?
   anonymizedAt  DateTime?
 
-  timeLogs   TimeLog[]
-  auditsMade AuditTrail[] @relation("auditor")
-  accounts   Account[]
-  sessions   Session[]
+  timeLogs             TimeLog[]
+  auditsMade           AuditTrail[] @relation("auditor")
+  accounts             Account[]
+  sessions             Session[]
+  editRequestsMade     EditRequest[] @relation("editRequestsRequested")
+  editRequestsReviewed EditRequest[] @relation("editRequestsReviewed")
 
   @@index([companyId])
   @@index([username])
@@ -179,8 +190,9 @@ model TimeLog {
   createdAt DateTime @default(now())
   // Deliberately NO updatedAt — DB trigger enforces append-only on original fields
 
-  breaks      Break[]
-  auditTrails AuditTrail[]
+  breaks       Break[]
+  auditTrails  AuditTrail[]
+  editRequests EditRequest[]
 
   @@index([userId, workDate])
   @@index([workDate])
@@ -227,4 +239,35 @@ model AuditTrail {
   @@index([auditorId])
   @@index([changedAt])
   @@map("audit_trail")
+}
+
+// ── Employee Correction Requests ────────────────────────────
+//
+// Employees cannot directly edit their time records (RD-ley 8/2019).
+// Instead they submit a request which SUPERADMIN must approve.
+// Approval atomically applies the correction + creates an AuditTrail.
+// STRICTLY APPEND-ONLY — no deletes allowed.
+
+model EditRequest {
+  id            String            @id @default(cuid())
+  timeLogId     String
+  timeLog       TimeLog           @relation(fields: [timeLogId], references: [id])
+  requestedById String
+  requestedBy   User              @relation("editRequestsRequested", fields: [requestedById], references: [id])
+  reviewedById  String?
+  reviewedBy    User?             @relation("editRequestsReviewed", fields: [reviewedById], references: [id])
+  fieldChanged  String            // "clockIn" | "clockOut"
+  proposedValue String            // ISO datetime — the value the employee wants
+  justification String            // Employee's reason — legally required, cannot be empty
+  status        EditRequestStatus @default(PENDING)
+  reviewNote    String?           // Superadmin's approval/rejection note
+  requestedAt   DateTime          @default(now())
+  reviewedAt    DateTime?
+  ipAddress     String?           // Employee's IP for traceability
+
+  @@index([timeLogId])
+  @@index([requestedById])
+  @@index([status])
+  @@index([requestedAt])
+  @@map("edit_requests")
 }

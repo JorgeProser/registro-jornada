@@ -5,6 +5,22 @@ import { signOut, useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import type { CompanyDto, CompanyEmployeeDto } from "@/types";
 
+// ── Edit Request types ───────────────────────────────────────
+
+interface EditRequestDto {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  fieldChanged: string;
+  proposedValue: string;
+  justification: string;
+  reviewNote: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  requestedBy: { id: string; name: string; surname: string; username: string };
+  reviewedBy: { name: string; surname: string; username: string } | null;
+  timeLog: { id: string; workDate: string; effectiveClockIn: string; effectiveClockOut: string | null };
+}
+
 // ── Helpers ─────────────────────────────────────────────────
 
 interface NewEmployeeRow {
@@ -38,6 +54,22 @@ export default function SuperAdminPage() {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // edit requests
+  const [editRequests, setEditRequests] = useState<EditRequestDto[]>([]);
+  const [editRequestsLoading, setEditRequestsLoading] = useState(true);
+  const [reviewTarget, setReviewTarget] = useState<EditRequestDto | null>(null);
+
+  const fetchEditRequests = useCallback(async () => {
+    setEditRequestsLoading(true);
+    try {
+      const res = await fetch("/api/edit-requests?status=PENDING");
+      const json = await res.json();
+      if (res.ok) setEditRequests(json.data ?? []);
+    } catch { /* silent */ } finally { setEditRequestsLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchEditRequests(); }, [fetchEditRequests]);
 
   // modals
   const [showCreateCompany, setShowCreateCompany] = useState(false);
@@ -122,6 +154,76 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+        {/* ── Pending edit requests ── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                Solicitudes de corrección
+                {editRequests.length > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold">
+                    {editRequests.length}
+                  </span>
+                )}
+              </h2>
+              <p className="text-sm text-gray-500">Peticiones pendientes de empleados para corregir sus registros</p>
+            </div>
+          </div>
+
+          {editRequestsLoading ? (
+            <div className="card py-6 text-center text-sm text-gray-400">Cargando...</div>
+          ) : editRequests.length === 0 ? (
+            <div className="card py-6 text-center text-sm text-gray-400">No hay solicitudes pendientes.</div>
+          ) : (
+            <div className="space-y-2">
+              {editRequests.map((req) => (
+                <div key={req.id} className="card px-5 py-4 flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap text-sm">
+                      <span className="font-semibold text-gray-900">
+                        {req.requestedBy.surname}, {req.requestedBy.name}
+                      </span>
+                      <span className="text-gray-400 font-mono text-xs">{req.requestedBy.username}</span>
+                      <span className="badge badge-amber">Pendiente</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Registro del{" "}
+                      <strong>{new Date(req.timeLog.workDate).toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</strong>
+                      {" · "}
+                      <strong>{req.fieldChanged === "clockIn" ? "Entrada" : "Salida"}</strong>
+                      {" · "}
+                      Valor actual:{" "}
+                      <span className="font-mono">
+                        {req.fieldChanged === "clockIn"
+                          ? new Date(req.timeLog.effectiveClockIn).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                          : req.timeLog.effectiveClockOut
+                          ? new Date(req.timeLog.effectiveClockOut).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                          : "—"}
+                      </span>
+                      {" → "}
+                      Propuesto:{" "}
+                      <span className="font-mono font-semibold text-brand-700">
+                        {new Date(req.proposedValue).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1 italic">"{req.justification}"</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Solicitado el {new Date(req.requestedAt).toLocaleString("es-ES")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setReviewTarget(req)}
+                    className="shrink-0 btn-primary text-xs py-1.5 px-4"
+                  >
+                    Revisar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Empresas registradas</h2>
@@ -229,6 +331,14 @@ export default function SuperAdminPage() {
       </main>
 
       {/* ── Modals ── */}
+
+      {reviewTarget && (
+        <ReviewEditRequestModal
+          req={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={() => { setReviewTarget(null); fetchEditRequests(); }}
+        />
+      )}
 
       {showChangePassword && (
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
@@ -713,6 +823,158 @@ function CreateCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSuc
             <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>Cancelar</button>
             <button type="submit" disabled={loading} className="btn-primary flex-1">
               {loading ? "Creando..." : "Crear empresa"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Review Edit Request Modal ────────────────────────────────
+
+function ReviewEditRequestModal({
+  req,
+  onClose,
+  onSuccess,
+}: {
+  req: EditRequestDto;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [action, setAction] = useState<"approve" | "reject" | "">("");
+  const [reviewNote, setReviewNote] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const fmtTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!action) { toast.error("Selecciona aprobar o rechazar"); return; }
+    if (reviewNote.trim().length < 5) { toast.error("La nota debe tener al menos 5 caracteres"); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/edit-requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, reviewNote: reviewNote.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? "Error al procesar la solicitud"); return; }
+      toast.success(action === "approve" ? "Corrección aprobada y aplicada" : "Solicitud rechazada");
+      onSuccess();
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b">
+          <h2 className="text-lg font-semibold">Revisar solicitud de corrección</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {req.requestedBy.surname}, {req.requestedBy.name} ·{" "}
+            {new Date(req.timeLog.workDate).toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "long" })}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Request details */}
+          <div className="rounded-xl bg-gray-50 p-4 text-sm space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Campo</p>
+                <p className="font-semibold">{req.fieldChanged === "clockIn" ? "Hora de entrada" : "Hora de salida"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Valor actual</p>
+                <p className="font-mono font-medium">
+                  {req.fieldChanged === "clockIn"
+                    ? fmtTime(req.timeLog.effectiveClockIn)
+                    : req.timeLog.effectiveClockOut ? fmtTime(req.timeLog.effectiveClockOut) : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Valor propuesto</p>
+                <p className="font-mono font-semibold text-brand-700">{fmtTime(req.proposedValue)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Solicitado el</p>
+                <p>{new Date(req.requestedAt).toLocaleString("es-ES")}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-0.5">Motivo del empleado</p>
+              <p className="italic text-gray-700">"{req.justification}"</p>
+            </div>
+          </div>
+
+          {/* Action choice */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setAction("approve")}
+              className={`py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
+                action === "approve"
+                  ? "border-success-500 bg-success-50 text-success-700"
+                  : "border-gray-200 text-gray-500 hover:border-success-300"
+              }`}
+            >
+              Aprobar
+            </button>
+            <button
+              type="button"
+              onClick={() => setAction("reject")}
+              className={`py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
+                action === "reject"
+                  ? "border-danger-500 bg-danger-50 text-danger-700"
+                  : "border-gray-200 text-gray-500 hover:border-danger-300"
+              }`}
+            >
+              Rechazar
+            </button>
+          </div>
+
+          <div>
+            <label className="label">
+              {action === "reject" ? "Motivo del rechazo" : "Nota de resolución"}{" "}
+              <span className="text-danger-500">*</span>
+              <span className="text-gray-400 font-normal ml-1">(quedará en el registro de auditoría)</span>
+            </label>
+            <textarea
+              className="input resize-none h-20"
+              placeholder={
+                action === "reject"
+                  ? "Ej: El registro ya fue corregido anteriormente. El horario indicado no coincide con el control de acceso."
+                  : "Ej: Corregido conforme a parte de presencia verificado."
+              }
+              value={reviewNote}
+              onChange={(e) => setReviewNote(e.target.value)}
+              required
+              minLength={5}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !action || reviewNote.trim().length < 5}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 text-white ${
+                action === "reject"
+                  ? "bg-danger-500 hover:bg-danger-600"
+                  : "bg-success-500 hover:bg-success-600"
+              }`}
+            >
+              {loading
+                ? "Procesando..."
+                : action === "approve"
+                ? "Aprobar y aplicar"
+                : action === "reject"
+                ? "Rechazar solicitud"
+                : "Confirmar"}
             </button>
           </div>
         </form>
