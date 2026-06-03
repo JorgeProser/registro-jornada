@@ -71,7 +71,7 @@ export async function PATCH(
   const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role === "EMPLOYEE") {
+  if (session.user.role === "EMPLOYEE" || session.user.role === "INSPECTOR") {
     return NextResponse.json(
       { error: "Los empleados no pueden modificar registros" },
       { status: 403 }

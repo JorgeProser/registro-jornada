@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import type { CompanyDto, CompanyEmployeeDto } from "@/types";
@@ -54,6 +55,7 @@ export default function SuperAdminPage() {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const router = useRouter();
 
   // edit requests
   const [editRequests, setEditRequests] = useState<EditRequestDto[]>([]);
@@ -258,6 +260,12 @@ export default function SuperAdminPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => router.push(`/superadmin/empresa/${co.id}`)}
+                      className="text-xs font-semibold px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+                    >
+                      Gestionar
+                    </button>
                     <button
                       onClick={() => { setAddEmpCompany(co); setExpandedId(co.id); }}
                       className="text-brand-600 hover:underline text-xs px-2 py-1"

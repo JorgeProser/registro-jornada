@@ -34,19 +34,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Parámetros de fecha inválidos" }, { status: 400 });
   }
 
+  const companyId =
+    session.user.role === "SUPERADMIN"
+      ? (searchParams.get("companyId") ?? session.user.companyId)
+      : session.user.companyId;
+
   const from = startOfMonth(new Date(year, month - 1, 1));
   const to = endOfMonth(from);
   const monthLabel = format(from, "MMMM yyyy", { locale: es });
 
   // Fetch company info
   const company = await prisma.company.findUnique({
-    where: { id: session.user.companyId },
+    where: { id: companyId },
   });
 
   // Fetch logs
   const logs = await prisma.timeLog.findMany({
     where: {
-      user: { companyId: session.user.companyId },
+      user: { companyId },
       workDate: { gte: from, lte: to },
       isCancelled: false,
       ...(employeeId ? { userId: employeeId } : {}),

@@ -1,9 +1,30 @@
+// GET    /api/superadmin/companies/[id] — fetch single company info
 // DELETE /api/superadmin/companies/[id] — delete a company and all its data
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (session.user.role !== "SUPERADMIN") {
+    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const company = await prisma.company.findUnique({
+    where: { id },
+    select: { id: true, name: true, cif: true, city: true },
+  });
+
+  if (!company) return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+  return NextResponse.json({ data: company });
+}
 
 export async function DELETE(
   req: NextRequest,

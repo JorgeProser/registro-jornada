@@ -15,19 +15,24 @@ import {
 import type { EmployeeStatus, AdminOverviewDto } from "@/types";
 import { differenceInMinutes } from "date-fns";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   if (session.user.role === "EMPLOYEE") {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
+  const companyId =
+    session.user.role === "SUPERADMIN"
+      ? (req.nextUrl.searchParams.get("companyId") ?? session.user.companyId)
+      : session.user.companyId;
+
   const now = nowMadrid();
   const { start: weekStart, end: weekEnd } = getWeekBounds(now);
 
   const users = await prisma.user.findMany({
     where: {
-      companyId: session.user.companyId,
+      companyId,
       role: "EMPLOYEE",
       deletedAt: null,
     },

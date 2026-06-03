@@ -26,14 +26,18 @@ export async function PATCH(
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role !== "MANAGER") {
+  if (session.user.role !== "MANAGER" && session.user.role !== "SUPERADMIN") {
     return NextResponse.json({ error: "Solo administradores pueden editar empleados" }, { status: 403 });
   }
 
   const { id } = await params;
 
+  // SUPERADMIN can edit employees across any company; MANAGER is scoped to their own
+  const companyFilter =
+    session.user.role === "SUPERADMIN" ? {} : { companyId: session.user.companyId };
+
   const target = await prisma.user.findFirst({
-    where: { id, companyId: session.user.companyId, deletedAt: null },
+    where: { id, ...companyFilter, deletedAt: null },
     select: { id: true, username: true },
   });
   if (!target) {

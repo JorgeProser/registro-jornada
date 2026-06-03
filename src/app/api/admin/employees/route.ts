@@ -21,15 +21,20 @@ const CreateEmployeeSchema = z.object({
   password: z.string().min(8).optional(),
 });
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   if (session.user.role === "EMPLOYEE") {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
+  const companyId =
+    session.user.role === "SUPERADMIN"
+      ? (req.nextUrl.searchParams.get("companyId") ?? session.user.companyId)
+      : session.user.companyId;
+
   const employees = await prisma.user.findMany({
-    where: { companyId: session.user.companyId, deletedAt: null },
+    where: { companyId, deletedAt: null },
     select: {
       id: true,
       username: true,
@@ -51,7 +56,7 @@ export async function GET(_req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role !== "MANAGER") {
+  if (session.user.role !== "MANAGER" && session.user.role !== "SUPERADMIN") {
     return NextResponse.json({ error: "Solo administradores pueden crear empleados" }, { status: 403 });
   }
 
@@ -64,6 +69,12 @@ export async function POST(req: NextRequest) {
   const { password, ...rest } = parsed.data;
   const passwordHash = password ? await bcrypt.hash(password, 12) : undefined;
 
+  // SUPERADMIN can pass a companyId in the request body to create employees in any company
+  const companyId =
+    session.user.role === "SUPERADMIN" && body?.companyId
+      ? String(body.companyId)
+      : session.user.companyId;
+
   const exists = await prisma.user.findFirst({ where: { username: rest.username, deletedAt: null } });
   if (exists) {
     return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
@@ -72,7 +83,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: {
       ...rest,
-      companyId: session.user.companyId,
+      companyId,
       passwordHash,
     },
     select: {

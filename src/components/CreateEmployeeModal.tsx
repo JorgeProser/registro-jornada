@@ -7,6 +7,7 @@ import type { Role } from "@prisma/client";
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  companyId?: string; // superadmin: create employee in a specific company
 }
 
 const ROLES = [
@@ -23,7 +24,7 @@ function makeUsername(name: string, surname: string): string {
     .replace(/[^A-Z0-9]/g, "");
 }
 
-export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
+export function CreateEmployeeModal({ onClose, onSuccess, companyId }: Props) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
@@ -61,7 +62,7 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
       const res = await fetch("/api/admin/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(companyId ? { ...formData, companyId } : formData),
       });
       const json = await res.json();
       if (!res.ok) {
