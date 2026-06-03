@@ -48,7 +48,7 @@ export async function PATCH(
   const { password, username, ...rest } = parsed.data;
 
   if (username && username !== target.username) {
-    const conflict = await prisma.user.findUnique({ where: { username } });
+    const conflict = await prisma.user.findFirst({ where: { username, deletedAt: null } });
     if (conflict) return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
   }
 
@@ -87,7 +87,8 @@ export async function DELETE(
       }),
       prisma.user.update({
         where: { id },
-        data: { deletedAt: new Date() },
+        // Free the username so it can be reused after soft-delete
+        data: { deletedAt: new Date(), username: null },
       }),
     ]);
     return NextResponse.json({

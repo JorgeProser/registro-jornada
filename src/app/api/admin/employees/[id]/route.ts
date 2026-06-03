@@ -49,7 +49,7 @@ export async function PATCH(
   const { password, username, ...rest } = parsed.data;
 
   if (username && username !== target.username) {
-    const conflict = await prisma.user.findUnique({ where: { username } });
+    const conflict = await prisma.user.findFirst({ where: { username, deletedAt: null } });
     if (conflict) {
       return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
     }

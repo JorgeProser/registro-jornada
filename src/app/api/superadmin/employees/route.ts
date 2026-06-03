@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
 
-  const exists = await prisma.user.findUnique({ where: { username: rest.username } });
+  const exists = await prisma.user.findFirst({ where: { username: rest.username, deletedAt: null } });
   if (exists) return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 12);
