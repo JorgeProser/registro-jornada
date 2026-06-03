@@ -293,8 +293,8 @@ function KpiCard({
   label: string; value: number | string; sub: string; dot: "green" | "red" | "gray";
 }) {
   const colors = {
-    green: { dot: "bg-success-500", text: "text-success-600 dark:text-success-400", bg: "bg-success-50 dark:bg-success-500/20", ring: "ring-success-200 dark:ring-success-500/30" },
-    red:   { dot: "bg-danger-500",  text: "text-danger-600 dark:text-danger-400",  bg: "bg-danger-50 dark:bg-danger-500/20",  ring: "ring-danger-200 dark:ring-danger-500/30" },
+    green: { dot: "bg-success-500", text: "text-success-600 dark:text-success-500", bg: "bg-success-50 dark:bg-success-500/20", ring: "ring-success-200 dark:ring-success-500/30" },
+    red:   { dot: "bg-danger-500",  text: "text-danger-600 dark:text-danger-500",  bg: "bg-danger-50 dark:bg-danger-500/20",  ring: "ring-danger-200 dark:ring-danger-500/30" },
     gray:  { dot: "bg-slate-300 dark:bg-slate-500", text: "text-slate-500 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-700/40", ring: "ring-slate-200 dark:ring-slate-600" },
   }[dot];
   return (

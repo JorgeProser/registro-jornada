@@ -149,8 +149,8 @@ function StatCard({
 }) {
   const colorMap = {
     blue:  "bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300",
-    green: "bg-success-500/10 text-success-600 dark:text-success-400",
-    amber: "bg-warning-500/10 text-warning-600 dark:text-warning-400",
+    green: "bg-success-500/10 text-success-600 dark:text-success-500",
+    amber: "bg-warning-500/10 text-warning-600 dark:text-warning-500",
     gray:  "bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300",
   };
   return (

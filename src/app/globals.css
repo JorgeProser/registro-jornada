@@ -67,17 +67,17 @@
   }
 
   .badge-green {
-    @apply badge bg-success-50 dark:bg-success-500/20 text-success-600 dark:text-success-400;
+    @apply badge bg-success-50 dark:bg-success-500/20 text-success-600 dark:text-success-500;
     box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
   }
 
   .badge-red {
-    @apply badge bg-danger-50 dark:bg-danger-500/20 text-danger-600 dark:text-danger-400;
+    @apply badge bg-danger-50 dark:bg-danger-500/20 text-danger-600 dark:text-danger-500;
     box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.2);
   }
 
   .badge-amber {
-    @apply badge bg-warning-50 dark:bg-warning-500/20 text-warning-600 dark:text-warning-400;
+    @apply badge bg-warning-50 dark:bg-warning-500/20 text-warning-600 dark:text-warning-500;
     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
   }
 
