@@ -68,7 +68,7 @@ model Company {
 // RGPD: Only data strictly necessary for time-control compliance
 model User {
   id            String    @id @default(cuid())
-  username      String?   @unique  // login identifier — NAMESURNAME uppercase
+  username      String    @unique  // login identifier — NAMESURNAME uppercase
   email         String?   @unique  // optional, kept for admin/system accounts
   name          String
   surname       String

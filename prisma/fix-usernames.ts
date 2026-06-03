@@ -18,16 +18,16 @@ function makeUsername(name: string, surname: string): string {
 
 async function main() {
   const emailUsers = await prisma.user.findMany({
-    where: { username: { contains: "@" } },
+    where: { OR: [{ username: { contains: "@" } }, { username: null }] },
     select: { id: true, username: true, name: true, surname: true, role: true },
   });
 
   if (emailUsers.length === 0) {
-    console.log("No users with email-based usernames found. Nothing to do.");
+    console.log("All users already have NAMESURNAME usernames. Nothing to do.");
     return;
   }
 
-  console.log(`Found ${emailUsers.length} user(s) with email-based usernames:\n`);
+  console.log(`Found ${emailUsers.length} user(s) needing a username:\n`);
 
   for (const user of emailUsers) {
     const newUsername = makeUsername(user.name, user.surname);
@@ -51,7 +51,7 @@ async function main() {
     });
 
     console.log(
-      `  ${user.role.padEnd(10)} ${user.username.padEnd(40)} → ${finalUsername}`
+      `  ${user.role.padEnd(10)} ${(user.username ?? "NULL").padEnd(40)} → ${finalUsername}`
     );
   }
 
