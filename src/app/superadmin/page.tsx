@@ -51,10 +51,20 @@ export default function SuperAdminPage() {
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/superadmin/companies");
-    const json = await res.json();
-    setCompanies(json.data ?? []);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/superadmin/companies");
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? `Error ${res.status}`);
+        setLoading(false);
+        return;
+      }
+      setCompanies(json.data ?? []);
+    } catch (e) {
+      toast.error("Error de red al cargar empresas");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchCompanies(); }, [fetchCompanies]);

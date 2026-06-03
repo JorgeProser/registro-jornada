@@ -36,50 +36,55 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
-  const companies = await prisma.company.findMany({
-    where: { id: { not: session.user.companyId } }, // exclude the SISTEMA placeholder
-    select: {
-      id: true,
-      name: true,
-      cif: true,
-      address: true,
-      postalCode: true,
-      city: true,
-      province: true,
-      createdAt: true,
-      users: {
-        where: { deletedAt: null },
-        select: {
-          id: true,
-          name: true,
-          surname: true,
-          email: true,
-          role: true,
-          department: true,
-          position: true,
-          nss: true,
-          weeklyHours: true,
+  try {
+    const companies = await prisma.company.findMany({
+      where: { cif: { not: "SISTEMA" } }, // exclude the SISTEMA placeholder by CIF, more reliable
+      select: {
+        id: true,
+        name: true,
+        cif: true,
+        address: true,
+        postalCode: true,
+        city: true,
+        province: true,
+        createdAt: true,
+        users: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            email: true,
+            role: true,
+            department: true,
+            position: true,
+            nss: true,
+            weeklyHours: true,
+          },
+          orderBy: [{ surname: "asc" }, { name: "asc" }],
         },
-        orderBy: [{ surname: "asc" }, { name: "asc" }],
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
 
-  const data = companies.map((c) => ({
-    id: c.id,
-    name: c.name,
-    cif: c.cif,
-    address: c.address,
-    postalCode: c.postalCode,
-    city: c.city,
-    province: c.province,
-    createdAt: c.createdAt.toISOString(),
-    employeeCount: c.users.length,
-    employees: c.users,
-  }));
+    const data = companies.map((c) => ({
+      id: c.id,
+      name: c.name,
+      cif: c.cif,
+      address: c.address,
+      postalCode: c.postalCode,
+      city: c.city,
+      province: c.province,
+      createdAt: c.createdAt.toISOString(),
+      employeeCount: c.users.length,
+      employees: c.users,
+    }));
 
-  return NextResponse.json({ data });
+    return NextResponse.json({ data });
+  } catch (e) {
+    console.error("[superadmin/companies GET]", e);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
