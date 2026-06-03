@@ -55,14 +55,14 @@ export default function EmployeesPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950">
       <Navbar />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Empleados</h1>
-            <p className="text-sm text-gray-500 mt-1">{employees.length} usuarios en total</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Empleados</h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{employees.length} usuarios en total</p>
           </div>
           <button onClick={() => setShowCreate(true)} className="btn-primary">
             + Nuevo empleado
@@ -81,16 +81,16 @@ export default function EmployeesPage() {
 
         <div className="card overflow-hidden">
           {loading ? (
-            <div className="py-12 text-center text-sm text-gray-400">Cargando...</div>
+            <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Cargando...</div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-gray-400">
+            <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">
               {search ? "No se encontraron resultados." : "No hay empleados. Crea el primero."}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <tr className="border-b bg-gray-50 dark:bg-slate-700/40 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                     <th className="px-4 py-3 text-left">Nombre</th>
                     <th className="px-4 py-3 text-left">Usuario</th>
                     <th className="px-4 py-3 text-left">Nº SS</th>
@@ -104,21 +104,21 @@ export default function EmployeesPage() {
                 </thead>
                 <tbody className="divide-y">
                   {filtered.map((emp) => (
-                    <tr key={emp.id} className="hover:bg-gray-50">
+                    <tr key={emp.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
                       <td className="px-4 py-3 font-medium">
                         {emp.surname ? `${emp.surname}, ${emp.name}` : emp.name}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 font-mono">{emp.username}</td>
-                      <td className="px-4 py-3 text-gray-500 font-mono text-xs">{emp.nss ?? "—"}</td>
-                      <td className="px-4 py-3 text-gray-500">{emp.department ?? "—"}</td>
-                      <td className="px-4 py-3 text-gray-500">{emp.position ?? "—"}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-slate-400 font-mono">{emp.username}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-slate-400 font-mono text-xs">{emp.nss ?? "—"}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{emp.department ?? "—"}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{emp.position ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span className={`badge ${emp.role === "MANAGER" ? "badge-blue" : emp.role === "INSPECTOR" ? "badge-amber" : "badge-green"}`}>
                           {roleLabel[emp.role] ?? emp.role}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center font-mono">{emp.weeklyHours}h</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-gray-400 dark:text-slate-500 text-xs">
                         {new Date(emp.createdAt).toLocaleDateString("es-ES")}
                       </td>
                       <td className="px-4 py-3">
@@ -219,12 +219,12 @@ function EditEmployeeModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold">Editar empleado</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-lg font-semibold dark:text-white">Editar empleado</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             {employee.name} {employee.surname}
           </p>
         </div>
@@ -322,7 +322,7 @@ function EditEmployeeModal({
           </div>
 
           <div>
-            <label className="label">Nueva contraseña <span className="text-gray-400 font-normal">(opcional)</span></label>
+            <label className="label">Nueva contraseña <span className="text-gray-400 dark:text-slate-500 font-normal">(opcional)</span></label>
             <input
               type="password"
               className="input"
@@ -331,7 +331,7 @@ function EditEmployeeModal({
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               minLength={8}
             />
-            <p className="text-xs text-gray-400 mt-1">Mínimo 8 caracteres.</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Mínimo 8 caracteres.</p>
           </div>
 
           <div className="flex gap-3 pt-4 border-t">

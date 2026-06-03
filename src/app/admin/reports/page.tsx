@@ -46,20 +46,20 @@ export default function ReportsPage() {
         : "";
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
+    <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950">
       <Navbar />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
 
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Informes de Jornada</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Informes de Jornada</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             Exporta hojas de horas mensuales · Conforme al Real Decreto-ley 8/2019
           </p>
         </div>
 
         {/* Filters card */}
         <div className="card p-6 space-y-5">
-          <h2 className="font-semibold text-gray-800">Configurar informe</h2>
+          <h2 className="font-semibold text-gray-800 dark:text-slate-100">Configurar informe</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
@@ -112,8 +112,8 @@ export default function ReportsPage() {
               <span className="text-2xl">📄</span>
             </div>
             <div>
-              <p className="font-semibold text-gray-800">PDF</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="font-semibold text-gray-800 dark:text-slate-100">PDF</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                 Incluye bloque de firmas para empleado y empresa. Apto para inspección.
               </p>
             </div>
@@ -133,8 +133,8 @@ export default function ReportsPage() {
               <span className="text-2xl">📊</span>
             </div>
             <div>
-              <p className="font-semibold text-gray-800">Excel</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="font-semibold text-gray-800 dark:text-slate-100">Excel</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                 Hoja de cálculo editable con todos los registros del período.
               </p>
             </div>
@@ -154,8 +154,8 @@ export default function ReportsPage() {
               <span className="text-2xl">📋</span>
             </div>
             <div>
-              <p className="font-semibold text-gray-800">CSV</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="font-semibold text-gray-800 dark:text-slate-100">CSV</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                 Formato universal compatible con cualquier software de RRHH.
               </p>
             </div>
@@ -179,8 +179,8 @@ export default function ReportsPage() {
         </div>
 
         {/* Legal notice */}
-        <div className="rounded-xl border bg-white p-4 text-xs text-gray-400 space-y-1">
-          <p className="font-medium text-gray-500">Información legal:</p>
+        <div className="rounded-xl border bg-white p-4 text-xs text-gray-400 dark:text-slate-500 space-y-1">
+          <p className="font-medium text-gray-500 dark:text-slate-400">Información legal:</p>
           <p>• Los registros marcados con ★ han sido modificados por RRHH. El registro de auditoría completo está disponible en el sistema.</p>
           <p>• Conservación obligatoria: 4 años (Art. 21 RD-ley 8/2019).</p>
           <p>• El PDF incluye espacio para firma del empleado/a y representante de la empresa.</p>

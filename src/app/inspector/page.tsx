@@ -35,7 +35,7 @@ export default function InspectorDashboard() {
   const corrected = logs.filter((l) => l.hasAuditTrail).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
+    <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950">
       <Navbar />
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
 
@@ -52,7 +52,7 @@ export default function InspectorDashboard() {
 
         {/* Filters */}
         <div className="card p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Consultar registros</h2>
+          <h2 className="font-semibold text-gray-800 dark:text-slate-100 mb-4">Consultar registros</h2>
           <div className="flex flex-wrap gap-3 items-end">
             <div className="flex-1 min-w-[200px]">
               <label className="label">Empleado/a</label>
@@ -116,7 +116,7 @@ export default function InspectorDashboard() {
         {logs.length > 0 && (
           <div className="card overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="font-semibold text-gray-800">Registros de jornada</h2>
+              <h2 className="font-semibold text-gray-800 dark:text-slate-100">Registros de jornada</h2>
               {selectedEmployee && (
                 <a
                   href={`/api/export?format=pdf&month=${month}&year=${year}&employeeId=${selectedEmployee}`}

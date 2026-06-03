@@ -110,7 +110,7 @@ export default function SuperAdminPage() {
             onClick={() => setShowChangePassword(true)}
             className="text-[11px] font-semibold text-slate-400 hover:text-slate-100 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition-all"
           >
-            Contraseña
+            Cambiar contraseña
           </button>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}

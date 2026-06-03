@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
+    <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950">
       <Navbar />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
 
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
 
         {/* Export panel */}
         <div className="card p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Exportar Hoja de Horas</h2>
+          <h2 className="font-semibold text-gray-800 dark:text-slate-100 mb-4">Exportar Hoja de Horas</h2>
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="label">Mes</label>
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
               <ExportButton format="csv" month={exportMonth} year={exportYear} employeeId={exportEmployee} />
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
             El PDF incluye bloque de firmas (empleado y representante de la empresa) conforme a RD-ley 8/2019.
           </p>
         </div>
@@ -121,8 +121,8 @@ export default function AdminDashboard() {
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
             <div>
-              <h2 className="font-semibold text-gray-800">Estado de empleados</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Actualización automática cada 30s</p>
+              <h2 className="font-semibold text-gray-800 dark:text-slate-100">Estado de empleados</h2>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Actualización automática cada 30s</p>
             </div>
             <button
               onClick={() => setShowCreateEmployee(true)}
@@ -133,12 +133,12 @@ export default function AdminDashboard() {
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-gray-400">Cargando...</div>
+            <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Cargando...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <tr className="border-b bg-gray-50 dark:bg-slate-700/40 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                     <th className="px-4 py-3 text-left">Empleado/a</th>
                     <th className="px-4 py-3 text-left">Departamento</th>
                     <th className="px-4 py-3 text-left">Estado</th>
@@ -168,19 +168,19 @@ export default function AdminDashboard() {
           <div className="card overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <div>
-                <h2 className="font-semibold text-gray-800">
+                <h2 className="font-semibold text-gray-800 dark:text-slate-100">
                   {selectedEmployee.surname}, {selectedEmployee.name}
                 </h2>
-                <p className="text-xs text-gray-400 font-mono">{selectedEmployee.username}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 font-mono">{selectedEmployee.username}</p>
               </div>
               <button
                 onClick={() => { setSelectedEmployee(null); setEmployeeLogs([]); }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
               >✕</button>
             </div>
 
             {logsLoading ? (
-              <div className="py-12 text-center text-sm text-gray-400">Cargando registros...</div>
+              <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Cargando registros...</div>
             ) : (
               <AdminTimeLogTable
                 logs={employeeLogs}
@@ -225,13 +225,13 @@ function AdminTimeLogTable({
   onCorrect: (log: TimeLogDto) => void;
 }) {
   if (logs.length === 0) {
-    return <div className="py-10 text-center text-sm text-gray-400">Sin registros</div>;
+    return <div className="py-10 text-center text-sm text-gray-400 dark:text-slate-500">Sin registros</div>;
   }
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <tr className="border-b bg-gray-50 dark:bg-slate-700/40 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
             <th className="px-4 py-3 text-left">Fecha</th>
             <th className="px-4 py-3 text-left">Entrada</th>
             <th className="px-4 py-3 text-left">Salida</th>
@@ -247,13 +247,13 @@ function AdminTimeLogTable({
             const fmt = (iso: string | null) =>
               iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "—";
             return (
-              <tr key={log.id} className={corrected ? "bg-amber-50" : "hover:bg-gray-50"}>
+              <tr key={log.id} className={corrected ? "bg-amber-50 dark:bg-amber-900/20" : "hover:bg-gray-50 dark:hover:bg-slate-700/30"}>
                 <td className="px-4 py-3 font-medium">
                   {new Date(log.workDate).toLocaleDateString("es-ES", { weekday: "short", day: "2-digit", month: "2-digit" })}
                 </td>
                 <td className="px-4 py-3">{fmt(log.effectiveClockIn)}</td>
                 <td className="px-4 py-3">{fmt(log.effectiveClockOut)}</td>
-                <td className="px-4 py-3 text-right text-gray-500">{log.totalBreakMinutes}m</td>
+                <td className="px-4 py-3 text-right text-gray-500 dark:text-slate-400">{log.totalBreakMinutes}m</td>
                 <td className="px-4 py-3 text-right font-semibold">
                   {log.effectiveWorkMinutes !== null ? minutesToHHMM(log.effectiveWorkMinutes) : "—"}
                 </td>
@@ -293,9 +293,9 @@ function KpiCard({
   label: string; value: number | string; sub: string; dot: "green" | "red" | "gray";
 }) {
   const colors = {
-    green: { dot: "bg-success-500", text: "text-success-600", bg: "bg-success-50", ring: "ring-success-200" },
-    red:   { dot: "bg-danger-500",  text: "text-danger-600",  bg: "bg-danger-50",  ring: "ring-danger-200" },
-    gray:  { dot: "bg-slate-300",   text: "text-slate-500",   bg: "bg-slate-100",  ring: "ring-slate-200" },
+    green: { dot: "bg-success-500", text: "text-success-600 dark:text-success-400", bg: "bg-success-50 dark:bg-success-500/20", ring: "ring-success-200 dark:ring-success-500/30" },
+    red:   { dot: "bg-danger-500",  text: "text-danger-600 dark:text-danger-400",  bg: "bg-danger-50 dark:bg-danger-500/20",  ring: "ring-danger-200 dark:ring-danger-500/30" },
+    gray:  { dot: "bg-slate-300 dark:bg-slate-500", text: "text-slate-500 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-700/40", ring: "ring-slate-200 dark:ring-slate-600" },
   }[dot];
   return (
     <div className="card p-5">
@@ -303,8 +303,8 @@ function KpiCard({
         <span className={`w-1.5 h-1.5 rounded-full ${colors.dot} ${dot === "green" ? "animate-pulse" : ""}`} />
         <span className={`text-[10px] font-bold uppercase tracking-wider ${colors.text}`}>{sub}</span>
       </div>
-      <p className="text-3xl font-bold text-slate-900 font-mono">{value}</p>
-      <p className="text-sm font-semibold text-slate-700 mt-1.5">{label}</p>
+      <p className="text-3xl font-bold text-slate-900 dark:text-white font-mono">{value}</p>
+      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-1.5">{label}</p>
     </div>
   );
 }
@@ -316,22 +316,22 @@ function EmployeeRow({
 }) {
   const overtime = emp.overtimeWeekMinutes > 0;
   return (
-    <tr className={`hover:bg-gray-50 cursor-pointer transition-colors ${isSelected ? "bg-brand-50" : ""}`} onClick={onSelect}>
+    <tr className={`hover:bg-gray-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors ${isSelected ? "bg-brand-50 dark:bg-brand-900/30" : ""}`} onClick={onSelect}>
       <td className="px-4 py-3">
         <p className="font-medium">{emp.surname}, {emp.name}</p>
-        <p className="text-xs text-gray-400 font-mono">{emp.username}</p>
+        <p className="text-xs text-gray-400 dark:text-slate-500 font-mono">{emp.username}</p>
       </td>
-      <td className="px-4 py-3 text-gray-500">{emp.department ?? "—"}</td>
+      <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{emp.department ?? "—"}</td>
       <td className="px-4 py-3">
         {emp.isActive ? (
           <div>
             <span className="badge badge-green">● Activo</span>
             {emp.location && (
-              <p className="text-[11px] text-gray-400 mt-0.5">{locationEs(emp.location)}</p>
+              <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{locationEs(emp.location)}</p>
             )}
           </div>
         ) : (
-          <span className="badge" style={{ background: "#f3f4f6", color: "#6b7280" }}>Fuera</span>
+          <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">Fuera</span>
         )}
       </td>
       <td className="px-4 py-3 text-right font-mono text-sm">{minutesToHHMM(emp.todayMinutes)}</td>
@@ -340,10 +340,10 @@ function EmployeeRow({
         {overtime ? (
           <span className="badge badge-amber">+{minutesToHHMM(emp.overtimeWeekMinutes)} extra</span>
         ) : (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-gray-400 dark:text-slate-500">—</span>
         )}
       </td>
-      <td className="px-4 py-3 text-brand-600 text-sm font-semibold">Ver →</td>
+      <td className="px-4 py-3 text-brand-600 dark:text-brand-400 text-sm font-semibold">Ver →</td>
     </tr>
   );
 }

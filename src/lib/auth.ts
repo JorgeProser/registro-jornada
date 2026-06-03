@@ -13,12 +13,14 @@ declare module "next-auth" {
       name: string;
       role: Role;
       companyId: string;
+      companyName: string;
     };
   }
   interface User {
     username: string;
     role: Role;
     companyId: string;
+    companyName: string;
   }
 }
 
@@ -28,6 +30,7 @@ declare module "next-auth/jwt" {
     username: string;
     role: Role;
     companyId: string;
+    companyName: string;
   }
 }
 
@@ -68,12 +71,18 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
 
+        const company = await prisma.company.findUnique({
+          where: { id: user.companyId },
+          select: { name: true },
+        });
+
         return {
           id: user.id,
           username: user.username,
           name: `${user.name} ${user.surname}`,
           role: user.role,
           companyId: user.companyId,
+          companyName: company?.name ?? "",
         };
       },
     }),
@@ -86,6 +95,7 @@ export const authOptions: NextAuthOptions = {
         token.username = user.username;
         token.role = user.role;
         token.companyId = user.companyId;
+        token.companyName = user.companyName;
       }
       return token;
     },
@@ -94,6 +104,7 @@ export const authOptions: NextAuthOptions = {
       session.user.username = token.username;
       session.user.role = token.role;
       session.user.companyId = token.companyId;
+      session.user.companyName = token.companyName;
       return session;
     },
   },

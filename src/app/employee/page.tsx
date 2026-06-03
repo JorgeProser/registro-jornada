@@ -61,10 +61,10 @@ export default function EmployeeDashboard() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Buenos días, {session?.user?.name?.split(" ")[0]} 👋
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">
             {new Date().toLocaleDateString("es-ES", {
               weekday: "long", day: "numeric", month: "long", year: "numeric",
             })}
@@ -101,8 +101,8 @@ export default function EmployeeDashboard() {
             {/* Monthly export (employee self-service) */}
             <div className="sm:col-span-3 card p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700">Mi hoja de horas mensual</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm font-medium text-gray-700 dark:text-slate-200">Mi hoja de horas mensual</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                   Exporta tu propio registro para revisión
                 </p>
               </div>
@@ -121,19 +121,19 @@ export default function EmployeeDashboard() {
         {/* History table */}
         <div className="mt-8 card overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="font-semibold text-gray-800">Historial de registros</h2>
+            <h2 className="font-semibold text-gray-800 dark:text-slate-100">Historial de registros</h2>
             <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-gray-400">Cargando registros...</div>
+            <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Cargando registros...</div>
           ) : (
             <TimeLogTable logs={logs} showAuditButton={true} />
           )}
         </div>
 
         {/* Legal notice */}
-        <p className="mt-6 text-center text-xs text-gray-400">
+        <p className="mt-6 text-center text-xs text-gray-400 dark:text-slate-600">
           Conforme al Real Decreto-ley 8/2019 · Los registros son inmutables por el empleado ·
           Conservación: 4 años · Ley 10/2021 (teletrabajo)
         </p>
@@ -148,10 +148,10 @@ function StatCard({
   label: string; value: string; sublabel: string; color: "blue" | "green" | "amber" | "gray";
 }) {
   const colorMap = {
-    blue: "bg-brand-50 text-brand-700",
-    green: "bg-success-500/10 text-success-600",
-    amber: "bg-warning-500/10 text-warning-600",
-    gray: "bg-gray-50 text-gray-700",
+    blue:  "bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300",
+    green: "bg-success-500/10 text-success-600 dark:text-success-400",
+    amber: "bg-warning-500/10 text-warning-600 dark:text-warning-400",
+    gray:  "bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300",
   };
   return (
     <div className={`rounded-xl p-4 ${colorMap[color]}`}>
