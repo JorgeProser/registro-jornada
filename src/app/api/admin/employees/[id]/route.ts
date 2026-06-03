@@ -1,4 +1,5 @@
 // PATCH /api/admin/employees/[id] — update employee fields
+// DELETE /api/admin/employees/[id] — soft-delete or permanent-delete an employee
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -20,6 +21,25 @@ const UpdateEmployeeSchema = z.object({
   password: z.string().min(8).optional(),
 });
 
+const DeleteEmployeeSchema = z.object({
+  mode: z.enum(["soft", "permanent"]),
+});
+
+interface SessionUser {
+  id: string;
+  role: string;
+  companyId: string;
+}
+
+async function resolveTarget(id: string, sessionUser: SessionUser) {
+  const companyFilter =
+    sessionUser.role === "SUPERADMIN" ? {} : { companyId: sessionUser.companyId };
+  return prisma.user.findFirst({
+    where: { id, ...companyFilter, deletedAt: null },
+    select: { id: true, username: true, companyId: true },
+  });
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -31,15 +51,7 @@ export async function PATCH(
   }
 
   const { id } = await params;
-
-  // SUPERADMIN can edit employees across any company; MANAGER is scoped to their own
-  const companyFilter =
-    session.user.role === "SUPERADMIN" ? {} : { companyId: session.user.companyId };
-
-  const target = await prisma.user.findFirst({
-    where: { id, ...companyFilter, deletedAt: null },
-    select: { id: true, username: true },
-  });
+  const target = await resolveTarget(id, session.user as SessionUser);
   if (!target) {
     return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
   }
@@ -74,4 +86,48 @@ export async function PATCH(
   });
 
   return NextResponse.json({ data: updated });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (session.user.role !== "MANAGER" && session.user.role !== "SUPERADMIN") {
+    return NextResponse.json({ error: "Solo administradores pueden eliminar empleados" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const target = await resolveTarget(id, session.user as SessionUser);
+  if (!target) {
+    return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const parsed = DeleteEmployeeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Modo inválido. Usa 'soft' o 'permanent'." }, { status: 400 });
+  }
+
+  if (parsed.data.mode === "soft") {
+    // Free username for reuse; keep all data for 4-year legal retention (RD-ley 8/2019)
+    const freeUsername = `DELETED_${Date.now()}_${target.username}`.slice(0, 80);
+    await prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date(), username: freeUsername },
+    });
+    return NextResponse.json({ ok: true, mode: "soft" });
+  }
+
+  // Permanent: wipe all associated data, then the user (only for accounts created by error)
+  await prisma.$transaction(async (tx) => {
+    await tx.editRequest.deleteMany({ where: { requestedById: id } });
+    await tx.editRequest.deleteMany({ where: { reviewedById: id } });
+    // AuditTrail rows reference auditorId, not userId — cascades via TimeLog deletion
+    await tx.timeLog.deleteMany({ where: { userId: id } });
+    await tx.user.delete({ where: { id } });
+  });
+
+  return NextResponse.json({ ok: true, mode: "permanent" });
 }

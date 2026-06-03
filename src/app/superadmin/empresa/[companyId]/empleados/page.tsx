@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { CreateEmployeeModal } from "@/components/CreateEmployeeModal";
+import { DeleteEmployeeModal } from "@/components/DeleteEmployeeModal";
 import toast from "react-hot-toast";
 import type { Role } from "@prisma/client";
 
@@ -37,6 +38,7 @@ export default function CompanyEmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [search, setSearch] = useState("");
 
   const fetchEmployees = useCallback(async () => {
@@ -113,8 +115,9 @@ export default function CompanyEmployeesPage() {
                     </td>
                     <td className="px-4 py-3 text-center font-mono">{emp.weeklyHours}h</td>
                     <td className="px-4 py-3 text-gray-400 text-xs">{new Date(emp.createdAt).toLocaleDateString("es-ES")}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex items-center gap-3">
                       <button onClick={() => setEditTarget(emp)} className="text-brand-600 hover:underline text-xs">Editar</button>
+                      <button onClick={() => setDeleteTarget(emp)} className="text-danger-500 hover:underline text-xs">Dar de baja</button>
                     </td>
                   </tr>
                 ))}
@@ -137,6 +140,14 @@ export default function CompanyEmployeesPage() {
           employee={editTarget}
           onClose={() => setEditTarget(null)}
           onSuccess={() => { setEditTarget(null); fetchEmployees(); }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteEmployeeModal
+          employee={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => { setDeleteTarget(null); fetchEmployees(); }}
         />
       )}
     </main>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/Navbar";
 import { CreateEmployeeModal } from "@/components/CreateEmployeeModal";
+import { DeleteEmployeeModal } from "@/components/DeleteEmployeeModal";
 import toast from "react-hot-toast";
 import type { Role } from "@prisma/client";
 
@@ -36,6 +37,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [search, setSearch] = useState("");
 
   const fetchEmployees = useCallback(async () => {
@@ -121,12 +123,18 @@ export default function EmployeesPage() {
                       <td className="px-4 py-3 text-gray-400 dark:text-slate-500 text-xs">
                         {new Date(emp.createdAt).toLocaleDateString("es-ES")}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 flex items-center gap-3">
                         <button
                           onClick={() => setEditTarget(emp)}
                           className="text-brand-600 hover:underline text-xs"
                         >
                           Editar
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(emp)}
+                          className="text-danger-500 hover:underline text-xs"
+                        >
+                          Dar de baja
                         </button>
                       </td>
                     </tr>
@@ -150,6 +158,14 @@ export default function EmployeesPage() {
           employee={editTarget}
           onClose={() => setEditTarget(null)}
           onSuccess={() => { setEditTarget(null); fetchEmployees(); }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteEmployeeModal
+          employee={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => { setDeleteTarget(null); fetchEmployees(); }}
         />
       )}
     </div>
