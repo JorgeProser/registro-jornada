@@ -15,6 +15,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
 
   async function handleCredentials(e: React.FormEvent) {
     e.preventDefault();
@@ -143,6 +144,16 @@ function LoginForm() {
                 "Enviar enlace de acceso"
               )}
             </button>
+
+            {mode === "password" && (
+              <button
+                type="button"
+                onClick={() => setShowForgot(true)}
+                className="w-full text-center text-xs text-brand-600 hover:underline mt-1"
+              >
+                He olvidado mi contraseña
+              </button>
+            )}
           </form>
 
           <p className="mt-6 text-center text-xs text-gray-400">
@@ -152,6 +163,10 @@ function LoginForm() {
           </p>
         </div>
       </div>
+
+      {showForgot && (
+        <ForgotPasswordModal onClose={() => setShowForgot(false)} />
+      )}
     </div>
   );
 }
@@ -161,6 +176,87 @@ export default function LoginPage() {
     <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-brand-900 to-brand-700" />}>
       <LoginForm />
     </Suspense>
+  );
+}
+
+const ADMIN_EMAIL = "jorge.garcia@prosersm.com";
+
+function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setSent(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b">
+          <h2 className="text-lg font-semibold text-gray-900">Recuperar contraseña</h2>
+        </div>
+
+        {sent ? (
+          <div className="p-6 space-y-4">
+            <div className="rounded-lg bg-success-500/10 border border-success-500/20 p-4 text-sm text-success-700">
+              ✓ Tu solicitud ha sido enviada al administrador. En breve recibirás una nueva contraseña.
+            </div>
+            <p className="text-sm text-gray-600">
+              También puedes contactar directamente con el administrador:
+            </p>
+            <a
+              href={`mailto:${ADMIN_EMAIL}`}
+              className="block text-center text-sm font-medium text-brand-600 hover:underline"
+            >
+              {ADMIN_EMAIL}
+            </a>
+            <button onClick={onClose} className="btn-primary w-full mt-2">Cerrar</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <p className="text-sm text-gray-600">
+              Introduce tu email y notificaremos al administrador para que restablezca tu contraseña.
+            </p>
+            <div>
+              <label className="label">Tu correo electrónico</label>
+              <input
+                type="email"
+                className="input"
+                placeholder="tu@empresa.es"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              También puedes contactar directamente con el administrador en{" "}
+              <a href={`mailto:${ADMIN_EMAIL}`} className="text-brand-600 hover:underline">{ADMIN_EMAIL}</a>.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>
+                Cancelar
+              </button>
+              <button type="submit" disabled={loading} className="btn-primary flex-1">
+                {loading ? "Enviando..." : "Enviar solicitud"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
 
