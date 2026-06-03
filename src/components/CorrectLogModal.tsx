@@ -111,7 +111,6 @@ export function CorrectLogModal({ log, onClose, onSuccess }: Props) {
               className="input font-mono"
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
-              defaultValue={field === "clockIn" ? currentIn : currentOut}
               required
             />
           </div>

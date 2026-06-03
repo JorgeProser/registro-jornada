@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [exportMonth, setExportMonth] = useState(new Date().getMonth() + 1);
   const [exportYear, setExportYear] = useState(new Date().getFullYear());
+  const [exportEmployee, setExportEmployee] = useState("");
 
   const fetchOverview = useCallback(async () => {
     const res = await fetch("/api/admin/overview");
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <label className="label">Empleado (opcional)</label>
-              <select className="input w-auto" id="export-employee">
+              <select className="input w-auto" id="export-employee" value={exportEmployee} onChange={(e) => setExportEmployee(e.target.value)}>
                 <option value="">Todos los empleados</option>
                 {overview?.employees.map((e) => (
                   <option key={e.userId} value={e.userId}>
@@ -106,9 +107,9 @@ export default function AdminDashboard() {
               </select>
             </div>
             <div className="flex gap-2">
-              <ExportButton format="pdf" month={exportMonth} year={exportYear} />
-              <ExportButton format="xlsx" month={exportMonth} year={exportYear} />
-              <ExportButton format="csv" month={exportMonth} year={exportYear} />
+              <ExportButton format="pdf" month={exportMonth} year={exportYear} employeeId={exportEmployee} />
+              <ExportButton format="xlsx" month={exportMonth} year={exportYear} employeeId={exportEmployee} />
+              <ExportButton format="csv" month={exportMonth} year={exportYear} employeeId={exportEmployee} />
             </div>
           </div>
           <p className="text-xs text-gray-400 mt-3">
@@ -343,12 +344,9 @@ function EmployeeRow({
   );
 }
 
-function ExportButton({ format, month, year }: { format: string; month: number; year: number }) {
+function ExportButton({ format, month, year, employeeId }: { format: string; month: number; year: number; employeeId: string }) {
   const labels: Record<string, string> = { pdf: "↓ PDF", xlsx: "↓ Excel", csv: "↓ CSV" };
-  const empId = typeof document !== "undefined"
-    ? (document.getElementById("export-employee") as HTMLSelectElement | null)?.value
-    : "";
-  const url = `/api/export?format=${format}&month=${month}&year=${year}${empId ? `&employeeId=${empId}` : ""}`;
+  const url = `/api/export?format=${format}&month=${month}&year=${year}${employeeId ? `&employeeId=${employeeId}` : ""}`;
   return (
     <a href={url} className="btn-outline text-sm" target="_blank" rel="noreferrer">
       {labels[format]}

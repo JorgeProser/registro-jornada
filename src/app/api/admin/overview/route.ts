@@ -10,6 +10,7 @@ import {
   calcOvertimeMinutes,
   getWeekBounds,
   nowMadrid,
+  formatMadrid,
 } from "@/lib/utils";
 import type { EmployeeStatus, AdminOverviewDto } from "@/types";
 import { differenceInMinutes } from "date-fns";
@@ -48,10 +49,10 @@ export async function GET(_req: NextRequest) {
     },
   });
 
+  const todayStr = formatMadrid(now, "yyyy-MM-dd");
   const statuses: EmployeeStatus[] = users.map((u) => {
-    const todayStr = now.toDateString();
     const todayLogs = u.timeLogs.filter(
-      (l) => new Date(l.workDate).toDateString() === todayStr
+      (l) => formatMadrid(new Date(l.workDate), "yyyy-MM-dd") === todayStr
     );
     const activeLog = u.timeLogs.find((l) => l.isActive);
 
