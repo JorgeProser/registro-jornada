@@ -7,6 +7,15 @@ import { addDays, subDays, setHours, setMinutes } from "date-fns";
 
 const prisma = new PrismaClient();
 
+function makeUsername(name: string, surname: string): string {
+  return (name + surname)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+}
+
 async function main() {
   console.log("🌱 Seeding database...");
 
@@ -28,11 +37,12 @@ async function main() {
   const hash = await bcrypt.hash("password123", 12);
 
   // ── Manager ──────────────────────────────────────────────
+  const managerUsername = makeUsername("Laura", "Martínez García");
   const manager = await prisma.user.upsert({
-    where: { email: "rrhh@acme.es" },
+    where: { username: managerUsername },
     update: {},
     create: {
-      email: "rrhh@acme.es",
+      username: managerUsername,
       name: "Laura",
       surname: "Martínez García",
       role: "MANAGER",
@@ -43,14 +53,14 @@ async function main() {
       weeklyHours: 40,
     },
   });
-  console.log("✓ Manager:", manager.email);
+  console.log("✓ Manager:", manager.username);
 
   // ── Inspector ────────────────────────────────────────────
   await prisma.user.upsert({
-    where: { email: "inspector@mitramiss.gob.es" },
+    where: { username: makeUsername("Carlos", "López Fernández") },
     update: {},
     create: {
-      email: "inspector@mitramiss.gob.es",
+      username: makeUsername("Carlos", "López Fernández"),
       name: "Carlos",
       surname: "López Fernández",
       role: "INSPECTOR",
@@ -64,10 +74,10 @@ async function main() {
 
   // ── Employees ────────────────────────────────────────────
   const employee1 = await prisma.user.upsert({
-    where: { email: "ana.rodriguez@acme.es" },
+    where: { username: makeUsername("Ana", "Rodríguez Pérez") },
     update: {},
     create: {
-      email: "ana.rodriguez@acme.es",
+      username: makeUsername("Ana", "Rodríguez Pérez"),
       name: "Ana",
       surname: "Rodríguez Pérez",
       role: "EMPLOYEE",
@@ -80,10 +90,10 @@ async function main() {
   });
 
   const employee2 = await prisma.user.upsert({
-    where: { email: "jose.garcia@acme.es" },
+    where: { username: makeUsername("José", "García Sánchez") },
     update: {},
     create: {
-      email: "jose.garcia@acme.es",
+      username: makeUsername("José", "García Sánchez"),
       name: "José",
       surname: "García Sánchez",
       role: "EMPLOYEE",
@@ -172,10 +182,10 @@ async function main() {
   console.log("\n🎉 Seed complete!");
   console.log("──────────────────────────────────────────");
   console.log("Login credentials (password: password123):");
-  console.log("  RRHH/Admin : rrhh@acme.es");
-  console.log("  Inspector  : inspector@mitramiss.gob.es");
-  console.log("  Empleada 1 : ana.rodriguez@acme.es");
-  console.log("  Empleado 2 : jose.garcia@acme.es");
+  console.log(`  RRHH/Admin : ${makeUsername("Laura", "Martínez García")}`);
+  console.log(`  Inspector  : ${makeUsername("Carlos", "López Fernández")}`);
+  console.log(`  Empleada 1 : ${makeUsername("Ana", "Rodríguez Pérez")}`);
+  console.log(`  Empleado 2 : ${makeUsername("José", "García Sánchez")}`);
 }
 
 main()

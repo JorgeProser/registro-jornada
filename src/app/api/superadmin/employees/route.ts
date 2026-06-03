@@ -11,7 +11,7 @@ const CreateSchema = z.object({
   companyId: z.string().min(1),
   name: z.string().min(1).max(100),
   surname: z.string().max(100).default(""),
-  email: z.string().email(),
+  username: z.string().min(1).max(50).toUpperCase(),
   password: z.string().min(6),
   nss: z.string().max(30).optional(),
   position: z.string().max(100).optional(),
@@ -37,13 +37,13 @@ export async function POST(req: NextRequest) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
 
-  const exists = await prisma.user.findUnique({ where: { email: rest.email } });
-  if (exists) return NextResponse.json({ error: "Ya existe un usuario con ese email" }, { status: 409 });
+  const exists = await prisma.user.findUnique({ where: { username: rest.username } });
+  if (exists) return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { ...rest, companyId, passwordHash, role: "EMPLOYEE" },
-    select: { id: true, email: true, name: true, surname: true, role: true, department: true, position: true, nss: true, weeklyHours: true },
+    select: { id: true, username: true, name: true, surname: true, role: true, department: true, position: true, nss: true, weeklyHours: true },
   });
 
   return NextResponse.json({ data: user }, { status: 201 });

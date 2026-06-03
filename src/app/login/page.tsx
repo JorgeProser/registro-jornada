@@ -8,26 +8,24 @@ import toast from "react-hot-toast";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const isVerify = params.get("verify") === "true";
   const error = params.get("error");
 
-  const [mode, setMode] = useState<"password" | "magic">("password");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
 
-  async function handleCredentials(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       const res = await signIn("credentials", {
-        email: email.toLowerCase().trim(),
+        username: username.toUpperCase().trim(),
         password,
         redirect: false,
       });
       if (res?.error) {
-        toast.error("Email o contraseña incorrectos");
+        toast.error("Usuario o contraseña incorrectos");
       } else {
         router.push("/");
       }
@@ -36,225 +34,160 @@ function LoginForm() {
     }
   }
 
-  async function handleMagicLink(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await signIn("email", { email: email.toLowerCase().trim(), redirect: false });
-      toast.success("Enlace de acceso enviado. Revisa tu correo electrónico.");
-    } catch {
-      toast.error("Error al enviar el enlace. Inténtalo de nuevo.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-900 to-brand-700 p-4">
-      <div className="w-full max-w-md">
-        {/* Logo / title */}
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+
+      {/* Ambient glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-brand-600/8 blur-[120px] rounded-full" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[250px] bg-brand-800/10 blur-[90px] rounded-full" />
+      </div>
+
+      {/* Subtle grid */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.025]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-[400px]">
+
+        {/* Logo + title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 mb-4">
-            <ClockIcon className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-600 shadow-2xl shadow-brand-600/30 mb-5">
+            <ClockIcon className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Registro de Jornada</h1>
-          <p className="text-brand-200 text-sm mt-1">Control horario · RD-ley 8/2019</p>
+          <h1 className="text-[22px] font-bold text-white tracking-tight">
+            Registro de Jornada
+          </h1>
+          <p className="text-slate-400 text-sm mt-1.5 font-medium">
+            Control horario · RD-ley 8/2019
+          </p>
         </div>
 
-        <div className="card p-8">
-          {isVerify && (
-            <div className="mb-6 rounded-lg bg-success-500/10 border border-success-500/20 p-4 text-sm text-success-600">
-              ✓ Revisa tu correo electrónico para el enlace de acceso.
-            </div>
-          )}
+        {/* Form card */}
+        <div
+          className="bg-white rounded-2xl p-8"
+          style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2)" }}
+        >
           {error && (
-            <div className="mb-6 rounded-lg bg-danger-500/10 border border-danger-500/20 p-4 text-sm text-danger-600">
+            <div className="mb-6 rounded-xl bg-danger-50 border border-danger-100 px-4 py-3 text-sm text-danger-700 flex items-center gap-2.5">
+              <span>⚠</span>
               Error de autenticación. Inténtalo de nuevo.
             </div>
           )}
 
-          {/* Mode tabs */}
-          <div className="flex rounded-lg border bg-gray-50 p-1 mb-6">
-            <button
-              onClick={() => setMode("password")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
-                mode === "password"
-                  ? "bg-white shadow text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Contraseña
-            </button>
-            <button
-              onClick={() => setMode("magic")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
-                mode === "magic"
-                  ? "bg-white shadow text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Enlace mágico
-            </button>
-          </div>
-
-          <form onSubmit={mode === "password" ? handleCredentials : handleMagicLink} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="label" htmlFor="email">Correo electrónico</label>
+              <label className="label" htmlFor="username">Usuario</label>
               <input
-                id="email"
-                type="email"
-                className="input"
-                placeholder="tu@empresa.es"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                className="input font-mono uppercase"
+                placeholder="NOMBREAPELLIDO"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toUpperCase())}
                 required
-                autoComplete="email"
+                autoComplete="username"
+                autoCapitalize="characters"
               />
             </div>
 
-            {mode === "password" && (
-              <div>
-                <label className="label" htmlFor="password">Contraseña</label>
-                <input
-                  id="password"
-                  type="password"
-                  className="input"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  minLength={8}
-                />
-              </div>
-            )}
+            <div>
+              <label className="label" htmlFor="password">Contraseña</label>
+              <input
+                id="password"
+                type="password"
+                className="input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                minLength={6}
+              />
+            </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-2.5 text-base"
+              className="btn-primary w-full py-2.5 text-[13px] mt-1"
             >
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <SpinnerIcon className="w-4 h-4 animate-spin" /> Accediendo...
+                <span className="flex items-center justify-center gap-2">
+                  <SpinnerIcon className="w-4 h-4 animate-spin" />
+                  Accediendo...
                 </span>
-              ) : mode === "password" ? (
-                "Iniciar sesión"
               ) : (
-                "Enviar enlace de acceso"
+                "Iniciar sesión"
               )}
             </button>
-
-            {mode === "password" && (
-              <button
-                type="button"
-                onClick={() => setShowForgot(true)}
-                className="w-full text-center text-xs text-brand-600 hover:underline mt-1"
-              >
-                He olvidado mi contraseña
-              </button>
-            )}
           </form>
 
-          <p className="mt-6 text-center text-xs text-gray-400">
-            Acceso restringido a empleados autorizados.
-            <br />
-            Sin autenticación biométrica · Conforme con RGPD y AEPD.
-          </p>
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <p className="text-center text-[11px] text-slate-400 leading-relaxed">
+              Acceso restringido a empleados autorizados
+              <br />
+              Sin autenticación biométrica · Conforme con RGPD y AEPD
+            </p>
+          </div>
         </div>
+
+        {/* Forgot password */}
+        <button
+          type="button"
+          onClick={() => setShowForgot(true)}
+          className="w-full text-center text-[11px] text-slate-500 hover:text-slate-300 mt-5 transition-colors font-medium"
+        >
+          He olvidado mi contraseña
+        </button>
       </div>
 
-      {showForgot && (
-        <ForgotPasswordModal onClose={() => setShowForgot(false)} />
-      )}
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-brand-900 to-brand-700" />}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-brand-600 border-t-transparent animate-spin" />
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
 }
 
-const ADMIN_EMAIL = "jorge.garcia@prosersm.com";
-
 function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setSent(true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Recuperar contraseña</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-sm"
+        style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.3)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-900">Recuperar contraseña</h2>
         </div>
-
-        {sent ? (
-          <div className="p-6 space-y-4">
-            <div className="rounded-lg bg-success-500/10 border border-success-500/20 p-4 text-sm text-success-700">
-              ✓ Tu solicitud ha sido enviada al administrador. En breve recibirás una nueva contraseña.
-            </div>
-            <p className="text-sm text-gray-600">
-              También puedes contactar directamente con el administrador:
-            </p>
-            <a
-              href={`mailto:${ADMIN_EMAIL}`}
-              className="block text-center text-sm font-medium text-brand-600 hover:underline"
-            >
-              {ADMIN_EMAIL}
-            </a>
-            <button onClick={onClose} className="btn-primary w-full mt-2">Cerrar</button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <p className="text-sm text-gray-600">
-              Introduce tu email y notificaremos al administrador para que restablezca tu contraseña.
-            </p>
-            <div>
-              <label className="label">Tu correo electrónico</label>
-              <input
-                type="email"
-                className="input"
-                placeholder="tu@empresa.es"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-            <p className="text-xs text-gray-400">
-              También puedes contactar directamente con el administrador en{" "}
-              <a href={`mailto:${ADMIN_EMAIL}`} className="text-brand-600 hover:underline">{ADMIN_EMAIL}</a>.
-            </p>
-            <div className="flex gap-3 pt-1">
-              <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>
-                Cancelar
-              </button>
-              <button type="submit" disabled={loading} className="btn-primary flex-1">
-                {loading ? "Enviando..." : "Enviar solicitud"}
-              </button>
-            </div>
-          </form>
-        )}
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Las contraseñas son gestionadas por el administrador. Contacta con RRHH
+            para restablecer la tuya.
+          </p>
+          <button onClick={onClose} className="btn-primary w-full mt-1">
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -262,7 +195,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
 
 function ClockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
   );

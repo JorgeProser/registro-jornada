@@ -8,7 +8,7 @@ import type { Role } from "@prisma/client";
 
 interface Employee {
   id: string;
-  email: string;
+  username: string;
   name: string;
   surname: string;
   role: string;
@@ -49,7 +49,7 @@ export default function EmployeesPage() {
   useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
 
   const filtered = employees.filter((e) =>
-    `${e.name} ${e.surname} ${e.email} ${e.department ?? ""}`
+    `${e.name} ${e.surname} ${e.username} ${e.department ?? ""}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -73,7 +73,7 @@ export default function EmployeesPage() {
           <input
             type="text"
             className="input"
-            placeholder="Buscar por nombre, email o departamento..."
+            placeholder="Buscar por nombre, usuario o departamento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -92,7 +92,7 @@ export default function EmployeesPage() {
                 <thead>
                   <tr className="border-b bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <th className="px-4 py-3 text-left">Nombre</th>
-                    <th className="px-4 py-3 text-left">Email</th>
+                    <th className="px-4 py-3 text-left">Usuario</th>
                     <th className="px-4 py-3 text-left">Nº SS</th>
                     <th className="px-4 py-3 text-left">Departamento</th>
                     <th className="px-4 py-3 text-left">Cargo</th>
@@ -108,7 +108,7 @@ export default function EmployeesPage() {
                       <td className="px-4 py-3 font-medium">
                         {emp.surname ? `${emp.surname}, ${emp.name}` : emp.name}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{emp.email}</td>
+                      <td className="px-4 py-3 text-gray-500 font-mono">{emp.username}</td>
                       <td className="px-4 py-3 text-gray-500 font-mono text-xs">{emp.nss ?? "—"}</td>
                       <td className="px-4 py-3 text-gray-500">{emp.department ?? "—"}</td>
                       <td className="px-4 py-3 text-gray-500">{emp.position ?? "—"}</td>
@@ -169,7 +169,7 @@ function EditEmployeeModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    email: employee.email,
+    username: employee.username,
     name: employee.name,
     surname: employee.surname ?? "",
     role: employee.role as Role,
@@ -185,7 +185,7 @@ function EditEmployeeModal({
     setLoading(true);
     try {
       const body: Record<string, unknown> = {
-        email: form.email,
+        username: form.username,
         name: form.name,
         surname: form.surname,
         role: form.role,
@@ -231,12 +231,12 @@ function EditEmployeeModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
-            <label className="label">Email <span className="text-danger-500">*</span></label>
+            <label className="label">Usuario <span className="text-danger-500">*</span></label>
             <input
-              type="email"
-              className="input"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              type="text"
+              className="input font-mono uppercase"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value.toUpperCase().replace(/\s/g, "") })}
               required
             />
           </div>

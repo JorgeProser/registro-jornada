@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 
 const UpdateEmployeeSchema = z.object({
-  email: z.string().email().optional(),
+  username: z.string().min(1).max(50).toUpperCase().optional(),
   name: z.string().min(1).max(100).optional(),
   surname: z.string().max(100).optional(),
   role: z.nativeEnum(Role).optional(),
@@ -32,10 +32,9 @@ export async function PATCH(
 
   const { id } = await params;
 
-  // Ensure employee belongs to same company
   const target = await prisma.user.findFirst({
     where: { id, companyId: session.user.companyId, deletedAt: null },
-    select: { id: true, email: true },
+    select: { id: true, username: true },
   });
   if (!target) {
     return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
@@ -47,25 +46,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { password, email, ...rest } = parsed.data;
+  const { password, username, ...rest } = parsed.data;
 
-  // Check new email uniqueness if changing
-  if (email && email !== target.email) {
-    const conflict = await prisma.user.findUnique({ where: { email } });
+  if (username && username !== target.username) {
+    const conflict = await prisma.user.findUnique({ where: { username } });
     if (conflict) {
-      return NextResponse.json({ error: "Ya existe un usuario con ese email" }, { status: 409 });
+      return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
     }
   }
 
   const updateData: Record<string, unknown> = { ...rest };
-  if (email) updateData.email = email;
+  if (username) updateData.username = username;
   if (password) updateData.passwordHash = await bcrypt.hash(password, 12);
 
   const updated = await prisma.user.update({
     where: { id },
     data: updateData,
     select: {
-      id: true, email: true, name: true, surname: true,
+      id: true, username: true, name: true, surname: true,
       role: true, department: true, position: true, nss: true,
       weeklyHours: true, createdAt: true,
     },

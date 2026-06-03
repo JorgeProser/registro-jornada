@@ -1,30 +1,31 @@
 // Run: npx ts-node --project tsconfig.seed.json prisma/seed-companies.ts
 //
 // Creates:
-//  - SUPERADMIN user: jorge.garcia@prosersm.com / Pollo123
+//  - SUPERADMIN user: JORGEGARCIA / Pollo123
 //  - 3 companies from Excel with their employees
-//  - Employee credentials: email = namesurname@registro.app, password = name123
+//  - Employee credentials: username = NAMESURNAME, password = name123
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-function slugify(str: string) {
-  return str
-    .toLowerCase()
+function makeUsername(name: string, surname: string): string {
+  return (name + surname)
+    .toUpperCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, "")
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function makeEmail(name: string, surname: string, suffix = "") {
-  return `${slugify(name + surname)}${suffix}@registro.app`;
+    .replace(/[^A-Z0-9]/g, "");
 }
 
 function makePassword(name: string) {
-  return `${slugify(name.split(" ")[0])}123`;
+  return name
+    .split(" ")[0]
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]/g, "") + "123";
 }
 
 // Parse "Firstname Surname1 Surname2" → { name, surname }
@@ -56,13 +57,13 @@ async function main() {
   }
 
   // ── 2. SUPERADMIN user ──────────────────────────────────────
-  const superEmail = "jorge.garcia@prosersm.com";
-  const existing = await prisma.user.findUnique({ where: { email: superEmail } });
+  const superUsername = makeUsername("Jorge", "García");
+  const existing = await prisma.user.findUnique({ where: { username: superUsername } });
   if (!existing) {
     const hash = await bcrypt.hash("Pollo123", 12);
     await prisma.user.create({
       data: {
-        email: superEmail,
+        username: superUsername,
         name: "Jorge",
         surname: "García",
         role: "SUPERADMIN",
@@ -70,9 +71,9 @@ async function main() {
         passwordHash: hash,
       },
     });
-    console.log(`Created SUPERADMIN: ${superEmail} / Pollo123`);
+    console.log(`Created SUPERADMIN: ${superUsername} / Pollo123`);
   } else {
-    console.log(`SUPERADMIN already exists: ${superEmail}`);
+    console.log(`SUPERADMIN already exists: ${superUsername}`);
   }
 
   // ── 3. Company data ─────────────────────────────────────────
@@ -111,14 +112,13 @@ async function main() {
 
   // ── 4. Employee data from Excel ─────────────────────────────
   // [fullName, nss, position, companyKey, dailyHours]
-  // dailyHours × 5 = weeklyHours
   const employees: [string, string, string, string, number][] = [
     // ESTUDIO TRIBUTARIO GARCIA
     ["SANDRA GOMEZ DIAZ",       "33/10467900-05",  "Contable",          "ESTUDIO TRIBUTARIO GARCIA", 8],
     ["MACARENA NAVARRO SALIDO", "28/10379426-75",  "Contable",          "ESTUDIO TRIBUTARIO GARCIA", 8],
     ["ANDONI GONZALO",          "281507081458",    "Contable",          "ESTUDIO TRIBUTARIO GARCIA", 4],
     ["RAQUEL VARCARCEL MUNUERA","28/11311746-31",  "Contable",          "ESTUDIO TRIBUTARIO GARCIA", 8],
-    // PROMOJAEN (employee listed as "PROMOJAEN 3000" in sheet, mapped to PROMOJAEN)
+    // PROMOJAEN
     ["ANTONIO JIMENEZ CAPILLA", "06/00629244-73",  "Contable",          "PROMOJAEN",                 8],
     // PROSER SISTEMAS MEDICOS SL
     ["ANDONI GONZALO",          "281507081458",    "Administrativo",    "PROSER SISTEMAS MEDICOS SL", 4],
@@ -130,8 +130,8 @@ async function main() {
     ["ARIEL CHAVIANO",          "31163032574",     "Ingeniero Tecnico", "PROSER SISTEMAS MEDICOS SL", 8],
   ];
 
-  // Track used emails to resolve duplicates (e.g. Andoni in two companies)
-  const usedEmails = new Set<string>();
+  // Track used usernames to resolve duplicates (e.g. Andoni in two companies)
+  const usedUsernames = new Set<string>();
 
   for (const [fullName, nss, position, companyKey, dailyHours] of employees) {
     const companyId = companyIds[companyKey];
@@ -143,26 +143,25 @@ async function main() {
     const { name, surname } = parseName(fullName);
     const weeklyHours = dailyHours * 5;
 
-    // Resolve email uniqueness
-    let email = makeEmail(name, surname);
-    if (usedEmails.has(email)) {
-      // For Andoni who appears in two companies, append company suffix
-      email = makeEmail(name, surname, `.${slugify(companyKey).slice(0, 4)}`);
+    // Resolve username uniqueness (Andoni appears in two companies)
+    let username = makeUsername(name, surname);
+    if (usedUsernames.has(username)) {
+      username = username + "2";
     }
-    usedEmails.add(email);
+    usedUsernames.add(username);
 
     const password = makePassword(name);
 
-    const exists = await prisma.user.findUnique({ where: { email } });
+    const exists = await prisma.user.findUnique({ where: { username } });
     if (exists) {
-      console.log(`  Already exists: ${email}`);
+      console.log(`  Already exists: ${username}`);
       continue;
     }
 
     const hash = await bcrypt.hash(password, 12);
     await prisma.user.create({
       data: {
-        email,
+        username,
         name,
         surname,
         nss: String(nss),
@@ -173,7 +172,7 @@ async function main() {
         passwordHash: hash,
       },
     });
-    console.log(`  Created: ${fullName} → ${email} / ${password}  [${companyKey}]`);
+    console.log(`  Created: ${fullName} → ${username} / ${password}  [${companyKey}]`);
   }
 
   console.log("\nDone.");

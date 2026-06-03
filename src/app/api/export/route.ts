@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       ...(employeeId ? { userId: employeeId } : {}),
     },
     include: {
-      user: { select: { name: true, surname: true, email: true, position: true, department: true } },
+      user: { select: { name: true, surname: true, username: true, position: true, department: true } },
       breaks: true,
     },
     orderBy: [{ user: { surname: "asc" } }, { workDate: "asc" }],
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
   // Build row data
   interface ReportRow {
     employeeName: string;
-    email: string;
+    username: string;
     department: string;
     position: string;
     date: string;
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     const hasCorrection = !!(l.adminCorrectedClockIn || l.adminCorrectedClockOut);
     return {
       employeeName: `${l.user.surname}, ${l.user.name}`,
-      email: l.user.email,
+      username: l.user.username,
       department: l.user.department ?? "—",
       position: l.user.position ?? "—",
       date: format(l.workDate, "dd/MM/yyyy"),
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
 // ── PDF generation ────────────────────────────────────────────
 async function generatePDF(
   rows: Array<{
-    employeeName: string; email: string; department: string; position: string;
+    employeeName: string; username: string; department: string; position: string;
     date: string; clockIn: string; clockOut: string; breakMinutes: number;
     effectiveMinutes: number | null; location: string; hasCorrection: boolean;
   }>,
@@ -151,7 +151,7 @@ async function generatePDF(
     doc.text(`Empleado/a: ${employeeName}`, 14, startY);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Email: ${sample.email}  |  Dpto: ${sample.department}  |  Cargo: ${sample.position}`, 14, startY + 5);
+    doc.text(`Usuario: ${sample.username}  |  Dpto: ${sample.department}  |  Cargo: ${sample.position}`, 14, startY + 5);
 
     const totalEffective = empRows.reduce((a, r) => a + (r.effectiveMinutes ?? 0), 0);
     const totalBreak = empRows.reduce((a, r) => a + r.breakMinutes, 0);
@@ -249,7 +249,7 @@ async function generatePDF(
 // ── Spreadsheet generation ────────────────────────────────────
 function generateSpreadsheet(
   rows: Array<{
-    employeeName: string; email: string; department: string; position: string;
+    employeeName: string; username: string; department: string; position: string;
     date: string; clockIn: string; clockOut: string; breakMinutes: number;
     effectiveMinutes: number | null; location: string; hasCorrection: boolean;
   }>,
@@ -258,7 +258,7 @@ function generateSpreadsheet(
   format: "csv" | "xlsx"
 ) {
   const headers = [
-    "Empleado", "Email", "Departamento", "Cargo",
+    "Empleado", "Usuario", "Departamento", "Cargo",
     "Fecha", "Hora Entrada", "Hora Salida",
     "Pausa (min)", "Horas Efectivas", "Modalidad", "Corrección RRHH"
   ];
@@ -267,7 +267,7 @@ function generateSpreadsheet(
     [`Empresa: ${companyName}`, `Período: ${monthLabel}`, "", "", "", "", "", "", "", "", ""],
     headers,
     ...rows.map((r) => [
-      r.employeeName, r.email, r.department, r.position,
+      r.employeeName, r.username, r.department, r.position,
       r.date, r.clockIn, r.clockOut,
       r.breakMinutes,
       r.effectiveMinutes !== null ? minutesToHHMM(r.effectiveMinutes) : "",

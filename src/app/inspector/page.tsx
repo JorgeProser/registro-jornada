@@ -7,7 +7,7 @@ import type { TimeLogDto } from "@/types";
 
 // Inspector view: read-only, can query by employee and date range
 export default function InspectorDashboard() {
-  const [employees, setEmployees] = useState<{ id: string; name: string; surname: string; email: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; name: string; surname: string; username: string }[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -35,7 +35,7 @@ export default function InspectorDashboard() {
   const corrected = logs.filter((l) => l.hasAuditTrail).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-slate-100">
       <Navbar />
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
 
@@ -64,7 +64,7 @@ export default function InspectorDashboard() {
                 <option value="">Seleccionar empleado...</option>
                 {employees.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.surname}, {e.name} ({e.email})
+                    {e.surname}, {e.name} ({e.username})
                   </option>
                 ))}
               </select>

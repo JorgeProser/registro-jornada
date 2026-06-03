@@ -1,7 +1,6 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import EmailProvider from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import type { Role } from "@prisma/client";
@@ -10,13 +9,14 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      email: string;
+      username: string;
       name: string;
       role: Role;
       companyId: string;
     };
   }
   interface User {
+    username: string;
     role: Role;
     companyId: string;
   }
@@ -25,6 +25,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
+    username: string;
     role: Role;
     companyId: string;
   }
@@ -36,24 +37,22 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
     error: "/login",
-    verifyRequest: "/login?verify=true",
   },
   providers: [
-    // ── Credentials (Email + Password) ────────────────────
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Usuario", type: "text" },
         password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.username || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
+          where: { username: credentials.username.toUpperCase().trim() },
           select: {
             id: true,
-            email: true,
+            username: true,
             name: true,
             surname: true,
             role: true,
@@ -64,33 +63,19 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || user.deletedAt) return null;
-        if (!user.passwordHash) return null; // magic-link-only account
+        if (!user.passwordHash) return null;
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
 
         return {
           id: user.id,
-          email: user.email,
+          username: user.username,
           name: `${user.name} ${user.surname}`,
           role: user.role,
           companyId: user.companyId,
         };
       },
-    }),
-
-    // ── Magic Link (passwordless) ──────────────────────────
-    // AEPD-compliant: no biometrics, email-based identity
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM,
     }),
   ],
 
@@ -98,6 +83,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.username = user.username;
         token.role = user.role;
         token.companyId = user.companyId;
       }
@@ -105,6 +91,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       session.user.id = token.id;
+      session.user.username = token.username;
       session.user.role = token.role;
       session.user.companyId = token.companyId;
       return session;

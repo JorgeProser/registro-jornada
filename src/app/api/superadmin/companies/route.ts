@@ -11,7 +11,7 @@ import { z } from "zod";
 const EmployeeSchema = z.object({
   name: z.string().min(1).max(100),
   surname: z.string().max(100).default(""),
-  email: z.string().email(),
+  username: z.string().min(1).max(50).toUpperCase(),
   password: z.string().min(6),
   nss: z.string().max(30).optional(),
   position: z.string().max(100).optional(),
@@ -54,7 +54,7 @@ export async function GET(_req: NextRequest) {
             id: true,
             name: true,
             surname: true,
-            email: true,
+            username: true,
             role: true,
             department: true,
             position: true,
@@ -108,20 +108,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ya existe una empresa con ese CIF" }, { status: 409 });
   }
 
-  // Check email uniqueness across all employees
-  const emails = employees.map((e) => e.email);
-  const duplicateEmails = emails.filter((e, i) => emails.indexOf(e) !== i);
-  if (duplicateEmails.length > 0) {
-    return NextResponse.json({ error: `Emails duplicados: ${duplicateEmails.join(", ")}` }, { status: 409 });
+  // Check username uniqueness across all employees
+  const usernames = employees.map((e) => e.username);
+  const duplicateUsernames = usernames.filter((u, i) => usernames.indexOf(u) !== i);
+  if (duplicateUsernames.length > 0) {
+    return NextResponse.json({ error: `Nombres de usuario duplicados: ${duplicateUsernames.join(", ")}` }, { status: 409 });
   }
 
   const existingUsers = await prisma.user.findMany({
-    where: { email: { in: emails } },
-    select: { email: true },
+    where: { username: { in: usernames } },
+    select: { username: true },
   });
   if (existingUsers.length > 0) {
     return NextResponse.json(
-      { error: `Emails ya en uso: ${existingUsers.map((u) => u.email).join(", ")}` },
+      { error: `Nombres de usuario ya en uso: ${existingUsers.map((u) => u.username).join(", ")}` },
       { status: 409 }
     );
   }

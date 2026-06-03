@@ -46,7 +46,7 @@ export interface TimeLogWithUser extends TimeLogDto {
     id: string;
     name: string;
     surname: string;
-    email: string;
+    username: string;
     department: string | null;
     position: string | null;
   };
@@ -62,7 +62,7 @@ export interface AuditTrailDto {
   oldValue: string | null;
   newValue: string | null;
   justification: string;
-  auditor: { name: string; surname: string; email: string };
+  auditor: { name: string; surname: string; username: string };
 }
 
 // ── Admin dashboard types ───────────────────────────────────
@@ -71,7 +71,7 @@ export interface EmployeeStatus {
   userId: string;
   name: string;
   surname: string;
-  email: string;
+  username: string;
   department: string | null;
   position: string | null;
   isActive: boolean;
@@ -96,7 +96,7 @@ export interface CompanyEmployeeDto {
   id: string;
   name: string;
   surname: string;
-  email: string;
+  username: string;
   role: string;
   department: string | null;
   position: string | null;

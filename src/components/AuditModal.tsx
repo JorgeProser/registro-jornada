@@ -105,7 +105,7 @@ export function AuditModal({
               </div>
 
               <p className="mt-2 text-[11px] text-gray-400">
-                Modificado por: {a.auditor.name} {a.auditor.surname} ({a.auditor.email})
+                Modificado por: {a.auditor.name} {a.auditor.surname} ({a.auditor.username})
               </p>
             </div>
           ))}

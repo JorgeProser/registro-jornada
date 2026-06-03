@@ -35,7 +35,7 @@ export async function GET(
       auditTrails: {
         orderBy: { changedAt: "desc" },
         include: {
-          auditor: { select: { name: true, surname: true, email: true } },
+          auditor: { select: { name: true, surname: true, username: true } },
         },
       },
     },

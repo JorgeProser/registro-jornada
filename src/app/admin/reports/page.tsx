@@ -7,7 +7,7 @@ interface Employee {
   id: string;
   name: string;
   surname: string;
-  email: string;
+  username: string;
   department: string | null;
 }
 
@@ -46,7 +46,7 @@ export default function ReportsPage() {
         : "";
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-slate-100">
       <Navbar />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
 

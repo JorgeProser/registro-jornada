@@ -10,7 +10,7 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 
 const CreateEmployeeSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1).max(50).toUpperCase(),
   name: z.string().min(1).max(100),
   surname: z.string().min(1).max(100),
   role: z.nativeEnum(Role).optional().default("EMPLOYEE"),
@@ -32,7 +32,7 @@ export async function GET(_req: NextRequest) {
     where: { companyId: session.user.companyId, deletedAt: null },
     select: {
       id: true,
-      email: true,
+      username: true,
       name: true,
       surname: true,
       role: true,
@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
   const { password, ...rest } = parsed.data;
   const passwordHash = password ? await bcrypt.hash(password, 12) : undefined;
 
-  const exists = await prisma.user.findUnique({ where: { email: rest.email } });
+  const exists = await prisma.user.findUnique({ where: { username: rest.username } });
   if (exists) {
-    return NextResponse.json({ error: "Ya existe un usuario con ese email" }, { status: 409 });
+    return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
   }
 
   const user = await prisma.user.create({
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       passwordHash,
     },
     select: {
-      id: true, email: true, name: true, surname: true,
+      id: true, username: true, name: true, surname: true,
       role: true, department: true, position: true, nss: true, weeklyHours: true, createdAt: true,
     },
   });

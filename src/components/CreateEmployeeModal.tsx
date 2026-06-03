@@ -14,10 +14,19 @@ const ROLES = [
   { value: "MANAGER", label: "Administrador (RRHH)" },
 ];
 
+function makeUsername(name: string, surname: string): string {
+  return (name + surname)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+}
+
 export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     name: "",
     surname: "",
     role: "EMPLOYEE" as Role,
@@ -28,10 +37,22 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
     password: "",
   });
 
+  function handleNameChange(field: "name" | "surname", value: string) {
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      const n = field === "name" ? value : prev.name;
+      const s = field === "surname" ? value : prev.surname;
+      if (!prev.username || prev.username === makeUsername(prev.name, prev.surname)) {
+        next.username = makeUsername(n, s);
+      }
+      return next;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!formData.email || !formData.name || !formData.surname) {
-      toast.error("Email, nombre y apellido son requeridos");
+    if (!formData.username || !formData.name || !formData.surname) {
+      toast.error("Usuario, nombre y apellido son requeridos");
       return;
     }
 
@@ -72,19 +93,6 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Email */}
-          <div>
-            <label className="label">Email <span className="text-danger-500">*</span></label>
-            <input
-              type="email"
-              className="input"
-              placeholder="juan.garcia@empresa.es"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </div>
-
           {/* Name & Surname */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -94,7 +102,7 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
                 className="input"
                 placeholder="Juan"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => handleNameChange("name", e.target.value)}
                 required
               />
             </div>
@@ -105,10 +113,24 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
                 className="input"
                 placeholder="García"
                 value={formData.surname}
-                onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
+                onChange={(e) => handleNameChange("surname", e.target.value)}
                 required
               />
             </div>
+          </div>
+
+          {/* Username */}
+          <div>
+            <label className="label">Usuario (acceso) <span className="text-danger-500">*</span></label>
+            <input
+              type="text"
+              className="input font-mono uppercase"
+              placeholder="JUANGARCIA"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value.toUpperCase().replace(/\s/g, "") })}
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1">Se genera automáticamente al introducir nombre y apellido.</p>
           </div>
 
           {/* Role */}
@@ -178,18 +200,16 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
 
           {/* Password */}
           <div>
-            <label className="label">Contraseña (opcional)</label>
+            <label className="label">Contraseña <span className="text-danger-500">*</span></label>
             <input
               type="password"
               className="input"
-              placeholder="Dejar en blanco = acceso solo con enlace mágico"
+              placeholder="Mínimo 8 caracteres"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               minLength={8}
+              required
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Mínimo 8 caracteres. Si no indicas contraseña, usará enlace mágico.
-            </p>
           </div>
 
           {/* Actions */}

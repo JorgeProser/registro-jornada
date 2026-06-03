@@ -9,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ── Enums ──────────────────────────────────────────────────
@@ -67,7 +68,8 @@ model Company {
 // RGPD: Only data strictly necessary for time-control compliance
 model User {
   id            String    @id @default(cuid())
-  email         String    @unique
+  username      String?   @unique  // login identifier — NAMESURNAME uppercase
+  email         String?   @unique  // optional, kept for admin/system accounts
   name          String
   surname       String
   // NIF stored encrypted — RGPD Art.9 (not special category but sensitive)
@@ -94,7 +96,7 @@ model User {
   sessions   Session[]
 
   @@index([companyId])
-  @@index([email])
+  @@index([username])
   @@index([role])
   @@map("users")
 }

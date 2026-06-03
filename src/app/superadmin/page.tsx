@@ -8,24 +8,27 @@ import type { CompanyDto, CompanyEmployeeDto } from "@/types";
 // ── Helpers ─────────────────────────────────────────────────
 
 interface NewEmployeeRow {
-  name: string; surname: string; email: string; password: string;
+  name: string; surname: string; username: string; password: string;
   nss: string; position: string; department: string; weeklyHours: number;
 }
 
 const EMPTY_ROW: NewEmployeeRow = {
-  name: "", surname: "", email: "", password: "",
+  name: "", surname: "", username: "", password: "",
   nss: "", position: "", department: "", weeklyHours: 40,
 };
 
-function slugify(str: string) {
-  return str.toLowerCase().normalize("NFD")
-    .replace(/[̀-ͯ]/g, "").replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
-}
-function autoEmail(name: string, surname: string) {
-  const s = slugify(name + surname); return s ? `${s}@registro.app` : "";
+function makeUsername(name: string, surname: string): string {
+  return (name + surname)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "");
 }
 function autoPassword(name: string) {
-  const f = slugify(name.split(" ")[0]); return f ? `${f}123` : "";
+  const f = name.trim().split(" ")[0].toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+  return f ? `${f}123` : "";
 }
 
 // ── Main page ───────────────────────────────────────────────
@@ -86,18 +89,34 @@ export default function SuperAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Panel de Superadministrador</h1>
-          <p className="text-sm text-gray-500">{session?.user?.email}</p>
+    <div className="min-h-screen bg-slate-100">
+      <header className="bg-slate-900 border-b border-slate-800/80 px-6 py-0 flex items-center justify-between h-14 sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center">
+            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div>
+            <span className="text-sm font-bold text-white tracking-tight">
+              Registro<span className="text-brand-400">Jornada</span>
+            </span>
+            <span className="ml-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Superadmin</span>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowChangePassword(true)} className="btn-outline text-sm">
-            Cambiar contraseña
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:block text-[11px] text-slate-500 font-mono">{session?.user?.username}</span>
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="text-[11px] font-semibold text-slate-400 hover:text-slate-100 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition-all"
+          >
+            Contraseña
           </button>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="btn-outline text-sm">
-            Cerrar sesión
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-[11px] font-semibold text-slate-400 hover:text-slate-100 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition-all"
+          >
+            Salir
           </button>
         </div>
       </header>
@@ -164,7 +183,7 @@ export default function SuperAdminPage() {
                           <thead>
                             <tr className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                               <th className="px-4 py-3 text-left">Nombre</th>
-                              <th className="px-4 py-3 text-left">Email</th>
+                              <th className="px-4 py-3 text-left">Usuario</th>
                               <th className="px-4 py-3 text-left">Nº SS</th>
                               <th className="px-4 py-3 text-left">Cargo</th>
                               <th className="px-4 py-3 text-center">Horas/sem</th>
@@ -177,7 +196,7 @@ export default function SuperAdminPage() {
                                 <td className="px-4 py-2 font-medium">
                                   {emp.surname ? `${emp.surname}, ${emp.name}` : emp.name}
                                 </td>
-                                <td className="px-4 py-2 text-gray-500">{emp.email}</td>
+                                <td className="px-4 py-2 text-gray-500 font-mono">{emp.username}</td>
                                 <td className="px-4 py-2 font-mono text-xs text-gray-500">{emp.nss ?? "—"}</td>
                                 <td className="px-4 py-2 text-gray-500">{emp.position ?? "—"}</td>
                                 <td className="px-4 py-2 text-center font-mono">{emp.weeklyHours}h</td>
@@ -316,8 +335,8 @@ function AddEmployeeModal({ company, onClose, onSuccess }: {
       if (field === "name" || field === "surname") {
         const n = field === "name" ? String(value) : prev.name;
         const s = field === "surname" ? String(value) : prev.surname;
-        if (!prev.email || prev.email === autoEmail(prev.name, prev.surname))
-          next.email = autoEmail(n, s);
+        if (!prev.username || prev.username === makeUsername(prev.name, prev.surname))
+          next.username = makeUsername(n, s);
         if (!prev.password || prev.password === autoPassword(prev.name))
           next.password = autoPassword(String(field === "name" ? value : prev.name));
       }
@@ -378,8 +397,8 @@ function AddEmployeeModal({ company, onClose, onSuccess }: {
             <input type="number" className="input" min={1} max={60} value={form.weeklyHours} onChange={(e) => set("weeklyHours", Number(e.target.value))} />
           </div>
           <div>
-            <label className="label">Email (acceso) <span className="text-danger-500">*</span></label>
-            <input type="email" className="input font-mono" value={form.email} onChange={(e) => set("email", e.target.value)} required />
+            <label className="label">Usuario (acceso) <span className="text-danger-500">*</span></label>
+            <input type="text" className="input font-mono uppercase" value={form.username} onChange={(e) => set("username", e.target.value.toUpperCase().replace(/\s/g, ""))} required />
           </div>
           <div>
             <label className="label">Contraseña inicial <span className="text-danger-500">*</span></label>
@@ -404,7 +423,7 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
 }) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    email: emp.email, name: emp.name, surname: emp.surname ?? "",
+    username: emp.username, name: emp.name, surname: emp.surname ?? "",
     nss: emp.nss ?? "", position: emp.position ?? "",
     department: emp.department ?? "", weeklyHours: emp.weeklyHours, password: "",
   });
@@ -414,7 +433,7 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
     setLoading(true);
     try {
       const body: Record<string, unknown> = {
-        email: form.email, name: form.name, surname: form.surname,
+        username: form.username, name: form.name, surname: form.surname,
         nss: form.nss || null, position: form.position || null,
         department: form.department || null, weeklyHours: form.weeklyHours,
       };
@@ -440,8 +459,8 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
-            <label className="label">Email <span className="text-danger-500">*</span></label>
-            <input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            <label className="label">Usuario <span className="text-danger-500">*</span></label>
+            <input type="text" className="input font-mono uppercase" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value.toUpperCase().replace(/\s/g, "") })} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -574,8 +593,8 @@ function CreateCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSuc
       if (field === "name" || field === "surname") {
         const n = field === "name" ? String(value) : next[i].name;
         const s = field === "surname" ? String(value) : next[i].surname;
-        if (!next[i].email || next[i].email === autoEmail(next[i].name, next[i].surname))
-          next[i].email = autoEmail(n, s);
+        if (!next[i].username || next[i].username === makeUsername(next[i].name, next[i].surname))
+          next[i].username = makeUsername(n, s);
         if (!next[i].password || next[i].password === autoPassword(next[i].name))
           next[i].password = autoPassword(field === "name" ? String(value) : next[i].name);
         if (field === "name") next[i].name = String(value);
@@ -674,8 +693,8 @@ function CreateCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSuc
                       <input className="input" value={emp.position} onChange={(e) => updateEmp(i, "position", e.target.value)} />
                     </div>
                     <div>
-                      <label className="label text-xs">Email <span className="text-danger-500">*</span></label>
-                      <input className="input font-mono text-xs" value={emp.email} onChange={(e) => updateEmp(i, "email", e.target.value)} />
+                      <label className="label text-xs">Usuario <span className="text-danger-500">*</span></label>
+                      <input className="input font-mono text-xs uppercase" value={emp.username} onChange={(e) => updateEmp(i, "username", e.target.value.toUpperCase().replace(/\s/g, ""))} />
                     </div>
                     <div>
                       <label className="label text-xs">Contraseña <span className="text-danger-500">*</span></label>

@@ -10,7 +10,7 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 
 const UpdateSchema = z.object({
-  email: z.string().email().optional(),
+  username: z.string().min(1).max(50).toUpperCase().optional(),
   name: z.string().min(1).max(100).optional(),
   surname: z.string().max(100).optional(),
   role: z.nativeEnum(Role).optional(),
@@ -36,7 +36,7 @@ export async function PATCH(
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const { id } = await params;
-  const target = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: { id: true, email: true } });
+  const target = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: { id: true, username: true } });
   if (!target) return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
 
   const body = await req.json().catch(() => null);
@@ -45,21 +45,21 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { password, email, ...rest } = parsed.data;
+  const { password, username, ...rest } = parsed.data;
 
-  if (email && email !== target.email) {
-    const conflict = await prisma.user.findUnique({ where: { email } });
-    if (conflict) return NextResponse.json({ error: "Ya existe un usuario con ese email" }, { status: 409 });
+  if (username && username !== target.username) {
+    const conflict = await prisma.user.findUnique({ where: { username } });
+    if (conflict) return NextResponse.json({ error: "Ya existe un usuario con ese nombre de usuario" }, { status: 409 });
   }
 
   const updateData: Record<string, unknown> = { ...rest };
-  if (email) updateData.email = email;
+  if (username) updateData.username = username;
   if (password) updateData.passwordHash = await bcrypt.hash(password, 12);
 
   const updated = await prisma.user.update({
     where: { id },
     data: updateData,
-    select: { id: true, email: true, name: true, surname: true, role: true, department: true, position: true, nss: true, weeklyHours: true },
+    select: { id: true, username: true, name: true, surname: true, role: true, department: true, position: true, nss: true, weeklyHours: true },
   });
 
   return NextResponse.json({ data: updated });
@@ -80,14 +80,11 @@ export async function DELETE(
   if (!target) return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
 
   if (target._count.timeLogs > 0) {
-    // Has time records — close any active clock-in, then soft-delete
     await prisma.$transaction([
-      // Close active log if clocked in right now
       prisma.timeLog.updateMany({
         where: { userId: id, isActive: true },
         data: { isActive: false, clockOut: new Date() },
       }),
-      // Soft delete
       prisma.user.update({
         where: { id },
         data: { deletedAt: new Date() },
@@ -97,7 +94,6 @@ export async function DELETE(
       data: { deleted: "soft", message: `${target.name} ${target.surname} dado de baja. Sus registros de jornada se conservan por obligación legal.` },
     });
   } else {
-    // No time records — safe to hard delete
     await prisma.$transaction(async (tx) => {
       await tx.account.deleteMany({ where: { userId: id } });
       await tx.session.deleteMany({ where: { userId: id } });
