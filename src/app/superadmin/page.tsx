@@ -38,6 +38,7 @@ export default function SuperAdminPage() {
 
   // modals
   const [showCreateCompany, setShowCreateCompany] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [deleteCompanyTarget, setDeleteCompanyTarget] = useState<CompanyDto | null>(null);
   const [deletingCompany, setDeletingCompany] = useState(false);
 
@@ -91,9 +92,14 @@ export default function SuperAdminPage() {
           <h1 className="text-xl font-bold text-gray-900">Panel de Superadministrador</h1>
           <p className="text-sm text-gray-500">{session?.user?.email}</p>
         </div>
-        <button onClick={() => signOut({ callbackUrl: "/login" })} className="btn-outline text-sm">
-          Cerrar sesión
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowChangePassword(true)} className="btn-outline text-sm">
+            Cambiar contraseña
+          </button>
+          <button onClick={() => signOut({ callbackUrl: "/login" })} className="btn-outline text-sm">
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -204,6 +210,10 @@ export default function SuperAdminPage() {
       </main>
 
       {/* ── Modals ── */}
+
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
 
       {showCreateCompany && (
         <CreateCompanyModal
@@ -469,6 +479,79 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
             <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>Cancelar</button>
             <button type="submit" disabled={loading} className="btn-primary flex-1">
               {loading ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Change Password Modal ────────────────────────────────────
+
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ current: "", next: "", confirm: "" });
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (form.next !== form.confirm) {
+      setError("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    if (form.next.length < 8) {
+      setError("La contraseña nueva debe tener al menos 8 caracteres");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/superadmin/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: form.current, newPassword: form.next }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error ?? "Error al cambiar contraseña"); return; }
+      toast.success("Contraseña actualizada correctamente");
+      onClose();
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b">
+          <h2 className="text-lg font-semibold">Cambiar contraseña</h2>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="label">Contraseña actual <span className="text-danger-500">*</span></label>
+            <input
+              type="password" className="input" autoComplete="current-password"
+              value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} required
+            />
+          </div>
+          <div>
+            <label className="label">Nueva contraseña <span className="text-danger-500">*</span></label>
+            <input
+              type="password" className="input" autoComplete="new-password"
+              value={form.next} onChange={(e) => setForm({ ...form, next: e.target.value })} required minLength={8}
+            />
+          </div>
+          <div>
+            <label className="label">Confirmar nueva contraseña <span className="text-danger-500">*</span></label>
+            <input
+              type="password" className="input" autoComplete="new-password"
+              value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required
+            />
+          </div>
+          {error && <p className="text-sm text-danger-600">{error}</p>}
+          <div className="flex gap-3 pt-2 border-t">
+            <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>Cancelar</button>
+            <button type="submit" disabled={loading} className="btn-primary flex-1">
+              {loading ? "Guardando..." : "Guardar"}
             </button>
           </div>
         </form>
