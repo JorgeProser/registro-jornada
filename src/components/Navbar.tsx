@@ -89,7 +89,7 @@ export function Navbar() {
                 <p className="text-[10px] text-slate-500 mt-0.5">
                   {role ? roleLabel[role] : ""}
                   {companyName && (
-                    <span className="text-slate-600"> · {companyName}</span>
+                    <span className="text-brand-400 font-semibold"> · {companyName}</span>
                   )}
                 </p>
               </div>
