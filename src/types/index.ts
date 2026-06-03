@@ -90,6 +90,33 @@ export interface AdminOverviewDto {
   employees: EmployeeStatus[];
 }
 
+// ── Superadmin types ────────────────────────────────────────
+
+export interface CompanyEmployeeDto {
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  role: string;
+  department: string | null;
+  position: string | null;
+  nss: string | null;
+  weeklyHours: number;
+}
+
+export interface CompanyDto {
+  id: string;
+  name: string;
+  cif: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  province: string;
+  createdAt: string;
+  employeeCount: number;
+  employees: CompanyEmployeeDto[];
+}
+
 // ── Request bodies ──────────────────────────────────────────
 
 export interface ClockInBody {

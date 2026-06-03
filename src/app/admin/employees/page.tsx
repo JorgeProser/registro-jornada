@@ -12,6 +12,7 @@ interface Employee {
   role: string;
   department: string | null;
   position: string | null;
+  nss: string | null;
   weeklyHours: number;
   createdAt: string;
 }
@@ -85,6 +86,7 @@ export default function EmployeesPage() {
                   <tr className="border-b bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <th className="px-4 py-3 text-left">Nombre</th>
                     <th className="px-4 py-3 text-left">Email</th>
+                    <th className="px-4 py-3 text-left">Nº SS</th>
                     <th className="px-4 py-3 text-left">Departamento</th>
                     <th className="px-4 py-3 text-left">Cargo</th>
                     <th className="px-4 py-3 text-left">Rol</th>
@@ -99,6 +101,7 @@ export default function EmployeesPage() {
                         {emp.surname}, {emp.name}
                       </td>
                       <td className="px-4 py-3 text-gray-500">{emp.email}</td>
+                      <td className="px-4 py-3 text-gray-500 font-mono text-xs">{emp.nss ?? "—"}</td>
                       <td className="px-4 py-3 text-gray-500">{emp.department ?? "—"}</td>
                       <td className="px-4 py-3 text-gray-500">{emp.position ?? "—"}</td>
                       <td className="px-4 py-3">

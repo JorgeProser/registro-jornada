@@ -8,6 +8,8 @@ export default async function RootPage() {
   if (!session) redirect("/login");
 
   switch (session.user.role) {
+    case "SUPERADMIN":
+      redirect("/superadmin");
     case "EMPLOYEE":
       redirect("/employee");
     case "MANAGER":

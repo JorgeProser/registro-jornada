@@ -6,7 +6,16 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
 
-    // Role-based route guards
+    // SUPERADMIN only belongs in /superadmin
+    if (token?.role === "SUPERADMIN" && !pathname.startsWith("/superadmin")) {
+      return NextResponse.redirect(new URL("/superadmin", req.url));
+    }
+    // /superadmin is exclusive to SUPERADMIN
+    if (pathname.startsWith("/superadmin") && token?.role !== "SUPERADMIN") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    // Role-based route guards for regular users
     if (pathname.startsWith("/admin") && token?.role === "EMPLOYEE") {
       return NextResponse.redirect(new URL("/employee", req.url));
     }
@@ -27,5 +36,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/employee/:path*", "/admin/:path*", "/inspector/:path*"],
+  matcher: ["/employee/:path*", "/admin/:path*", "/inspector/:path*", "/superadmin/:path*"],
 };

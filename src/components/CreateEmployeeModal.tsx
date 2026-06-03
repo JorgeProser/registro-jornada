@@ -23,6 +23,7 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
     role: "EMPLOYEE" as Role,
     department: "",
     position: "",
+    nss: "",
     weeklyHours: 40,
     password: "",
   });
@@ -124,6 +125,18 @@ export function CreateEmployeeModal({ onClose, onSuccess }: Props) {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* NSS */}
+          <div>
+            <label className="label">Nº Seguridad Social</label>
+            <input
+              type="text"
+              className="input"
+              placeholder="28/12345678-90"
+              value={formData.nss}
+              onChange={(e) => setFormData({ ...formData, nss: e.target.value })}
+            />
           </div>
 
           {/* Department & Position */}

@@ -17,8 +17,9 @@ datasource db {
 
 enum Role {
   EMPLOYEE
-  MANAGER   // HR Admin — can view all, correct records with audit
-  INSPECTOR // Labor Inspector — read-only access
+  MANAGER    // HR Admin — can view all, correct records with audit
+  INSPECTOR  // Labor Inspector — read-only access
+  SUPERADMIN // Platform master — can create/delete companies
 }
 
 enum BreakType {
@@ -77,6 +78,7 @@ model User {
   department    String?
   position      String?
   weeklyHours   Int       @default(40) // contracted weekly hours — base for overtime calc
+  nss           String?   // Número de la Seguridad Social
   passwordHash  String?
   emailVerified DateTime?
   image         String?

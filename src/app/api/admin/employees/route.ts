@@ -16,6 +16,7 @@ const CreateEmployeeSchema = z.object({
   role: z.nativeEnum(Role).optional().default("EMPLOYEE"),
   department: z.string().max(100).optional(),
   position: z.string().max(100).optional(),
+  nss: z.string().max(30).optional(),
   weeklyHours: z.number().int().min(1).max(60).optional().default(40),
   password: z.string().min(8).optional(),
 });
@@ -37,6 +38,7 @@ export async function GET(_req: NextRequest) {
       role: true,
       department: true,
       position: true,
+      nss: true,
       weeklyHours: true,
       createdAt: true,
     },
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest) {
     },
     select: {
       id: true, email: true, name: true, surname: true,
-      role: true, department: true, position: true, weeklyHours: true, createdAt: true,
+      role: true, department: true, position: true, nss: true, weeklyHours: true, createdAt: true,
     },
   });
 
