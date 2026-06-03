@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -15,7 +15,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   const company = await prisma.company.findUnique({
     where: { id },

@@ -22,7 +22,7 @@ const UpdateEmployeeSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -30,7 +30,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Solo administradores pueden editar empleados" }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   // Ensure employee belongs to same company
   const target = await prisma.user.findFirst({
