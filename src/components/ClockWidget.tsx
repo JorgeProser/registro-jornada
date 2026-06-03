@@ -63,7 +63,7 @@ export function ClockWidget({ activeLog, onAction }: Props) {
       });
       const json = await res.json();
       if (!res.ok) { toast.error(json.error ?? "Error al fichar entrada"); return; }
-      toast.success("¡Entrada registrada!");
+      toast.success(json.resumed ? "¡Jornada reanudada! Descanso registrado." : "¡Entrada registrada!");
       onAction();
     } finally {
       setLoading(false);

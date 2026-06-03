@@ -85,19 +85,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Prevent multiple clock-ins on the same calendar day
+  // Check for a completed log today — resuming the same day is treated as a break
   const todayLog = await prisma.timeLog.findFirst({
     where: {
       userId: session.user.id,
       workDate: { gte: todayStart, lte: todayEnd },
       isCancelled: false,
     },
+    include: { breaks: true, _count: { select: { auditTrails: true } } },
   });
   if (todayLog && todayLog.clockOut) {
-    return NextResponse.json(
-      { error: "Ya existe un registro completo para hoy. Contacta con RRHH si necesitas una corrección." },
-      { status: 409 }
-    );
+    // Create a break covering the gap between clock-out and now
+    await prisma.break.create({
+      data: {
+        timeLogId: todayLog.id,
+        type: "REST",
+        startTime: todayLog.clockOut,
+        endTime: now,
+      },
+    });
+
+    const resumed = await prisma.timeLog.update({
+      where: { id: todayLog.id },
+      data: { clockOut: null, isActive: true },
+      include: { breaks: true, _count: { select: { auditTrails: true } } },
+    });
+
+    return NextResponse.json({ data: mapTimeLogToDto(resumed), resumed: true }, { status: 200 });
   }
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? "unknown";
