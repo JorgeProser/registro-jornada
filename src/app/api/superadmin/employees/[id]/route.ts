@@ -87,8 +87,8 @@ export async function DELETE(
       }),
       prisma.user.update({
         where: { id },
-        // Free the username so it can be reused after soft-delete
-        data: { deletedAt: new Date(), username: null },
+        // Prefix username so the original value is free to be reused
+        data: { deletedAt: new Date(), username: `DELETED_${id}` },
       }),
     ]);
     return NextResponse.json({
