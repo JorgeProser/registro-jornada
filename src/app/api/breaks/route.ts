@@ -15,7 +15,7 @@ const StartBreakSchema = z.object({
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role !== "EMPLOYEE") {
+  if (session.user.role !== "EMPLOYEE" && session.user.role !== "MANAGER") {
     return NextResponse.json({ error: "Solo empleados pueden registrar descansos" }, { status: 403 });
   }
 

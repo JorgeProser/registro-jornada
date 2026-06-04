@@ -52,6 +52,7 @@ export function Navbar() {
               <NavLink href="/admin" active={pathname === "/admin"}>Dashboard</NavLink>
               <NavLink href="/admin/employees" active={pathname?.startsWith("/admin/employees") ?? false}>Empleados</NavLink>
               <NavLink href="/admin/reports" active={pathname?.startsWith("/admin/reports") ?? false}>Informes</NavLink>
+              <NavLink href="/employee" active={pathname === "/employee"}>Mi Jornada</NavLink>
             </>
           )}
           {role === "INSPECTOR" && (

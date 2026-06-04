@@ -26,7 +26,7 @@ export async function POST(
   const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role !== "EMPLOYEE") {
+  if (session.user.role !== "EMPLOYEE" && session.user.role !== "MANAGER") {
     return NextResponse.json({ error: "Solo los empleados pueden enviar solicitudes de corrección" }, { status: 403 });
   }
 
