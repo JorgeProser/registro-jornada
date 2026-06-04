@@ -9,11 +9,25 @@ import { RequestEditModal } from "@/components/RequestEditModal";
 import type { TimeLogDto } from "@/types";
 import { minutesToHHMM } from "@/lib/client-utils";
 
+interface MyEditRequest {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  fieldChanged: string;
+  proposedValue: string;
+  justification: string;
+  reviewNote: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  reviewedBy: { name: string; surname: string } | null;
+  timeLog: { workDate: string; effectiveClockIn: string; effectiveClockOut: string | null };
+}
+
 export default function EmployeeDashboard() {
   const { data: session } = useSession();
   const [logs, setLogs] = useState<TimeLogDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [editRequestLog, setEditRequestLog] = useState<TimeLogDto | null>(null);
+  const [myRequests, setMyRequests] = useState<MyEditRequest[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
@@ -29,7 +43,14 @@ export default function EmployeeDashboard() {
     setLoading(false);
   }, [selectedMonth]);
 
+  const fetchMyRequests = useCallback(async () => {
+    const res = await fetch("/api/edit-requests/mine");
+    const json = await res.json();
+    if (res.ok) setMyRequests(json.data ?? []);
+  }, []);
+
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => { fetchMyRequests(); }, [fetchMyRequests]);
 
   const activeLog = logs.find((l) => l.isActive) ?? null;
 
@@ -138,9 +159,50 @@ export default function EmployeeDashboard() {
           )}
         </div>
 
+        {/* My edit requests */}
+        {myRequests.length > 0 && (
+          <div className="mt-6 card overflow-hidden">
+            <div className="p-4 border-b">
+              <h2 className="font-semibold text-gray-800 dark:text-slate-100">Mis solicitudes de corrección</h2>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Historial de las últimas 20 peticiones enviadas</p>
+            </div>
+            <div className="divide-y">
+              {myRequests.map((req) => (
+                <div key={req.id} className="px-4 py-3 flex items-start gap-3 text-sm">
+                  <StatusBadge status={req.status} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 dark:text-slate-200">
+                      {new Date(req.timeLog.workDate).toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "long" })}
+                      {" · "}
+                      {req.fieldChanged === "clockIn" ? "Entrada" : "Salida"}
+                      {" → "}
+                      <span className="font-mono">
+                        {new Date(req.proposedValue).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 italic">"{req.justification}"</p>
+                    {req.reviewNote && (
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                        Nota: {req.reviewNote}
+                        {req.reviewedBy && (
+                          <span className="text-gray-400 dark:text-slate-500"> · {req.reviewedBy.name} {req.reviewedBy.surname}</span>
+                        )}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                      {new Date(req.requestedAt).toLocaleString("es-ES")}
+                      {req.reviewedAt && ` · Revisado el ${new Date(req.reviewedAt).toLocaleString("es-ES")}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Legal notice */}
         <p className="mt-6 text-center text-xs text-gray-400 dark:text-slate-600">
-          Conforme al Real Decreto-ley 8/2019 · Las correcciones requieren aprobación del superadmin ·
+          Conforme al Real Decreto-ley 8/2019 · Las correcciones requieren aprobación ·
           Conservación: 4 años · Ley 10/2021 (teletrabajo)
         </p>
       </main>
@@ -149,7 +211,7 @@ export default function EmployeeDashboard() {
         <RequestEditModal
           log={editRequestLog}
           onClose={() => setEditRequestLog(null)}
-          onSuccess={fetchLogs}
+          onSuccess={() => { fetchLogs(); fetchMyRequests(); setEditRequestLog(null); }}
         />
       )}
     </div>
@@ -174,6 +236,14 @@ function StatCard({
       <p className="text-xs opacity-70 mt-0.5">{sublabel}</p>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: "PENDING" | "APPROVED" | "REJECTED" }) {
+  if (status === "PENDING")
+    return <span className="shrink-0 badge badge-amber mt-0.5">Pendiente</span>;
+  if (status === "APPROVED")
+    return <span className="shrink-0 badge badge-green mt-0.5">Aprobada</span>;
+  return <span className="shrink-0 badge badge-red mt-0.5">Rechazada</span>;
 }
 
 function MonthPicker({
