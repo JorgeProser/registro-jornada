@@ -1,5 +1,6 @@
 // PATCH /api/edit-requests/[id]
-// SUPERADMIN only — approves or rejects an employee correction request.
+// SUPERADMIN or MANAGER — approves or rejects an employee correction request.
+// MANAGER is scoped to their company; SUPERADMIN can review any.
 // Approval atomically: applies the correction to TimeLog + writes AuditTrail + closes the request.
 // Rejection: closes the request + writes AuditTrail.
 // All operations are append-only and fully traceable per RD-ley 8/2019.
@@ -26,8 +27,8 @@ export async function PATCH(
   const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role !== "SUPERADMIN") {
-    return NextResponse.json({ error: "Solo el superadmin puede revisar solicitudes" }, { status: 403 });
+  if (session.user.role !== "SUPERADMIN" && session.user.role !== "MANAGER") {
+    return NextResponse.json({ error: "Sin permisos para revisar solicitudes" }, { status: 403 });
   }
 
   const body = await req.json().catch(() => null);
@@ -42,10 +43,21 @@ export async function PATCH(
 
   const editRequest = await prisma.editRequest.findUnique({
     where: { id },
-    include: { timeLog: true },
+    include: {
+      timeLog: true,
+      requestedBy: { select: { companyId: true } },
+    },
   });
 
   if (!editRequest) return NextResponse.json({ error: "Solicitud no encontrada" }, { status: 404 });
+
+  if (
+    session.user.role === "MANAGER" &&
+    editRequest.requestedBy.companyId !== session.user.companyId
+  ) {
+    return NextResponse.json({ error: "Sin permisos para esta solicitud" }, { status: 403 });
+  }
+
   if (editRequest.status !== "PENDING") {
     return NextResponse.json({ error: "Esta solicitud ya fue resuelta" }, { status: 409 });
   }

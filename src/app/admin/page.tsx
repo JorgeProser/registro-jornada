@@ -1,12 +1,27 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { TimeLogTable } from "@/components/TimeLogTable";
 import { CorrectLogModal } from "@/components/CorrectLogModal";
 import { CreateEmployeeModal } from "@/components/CreateEmployeeModal";
 import type { AdminOverviewDto, EmployeeStatus, TimeLogDto } from "@/types";
 import { minutesToHHMM } from "@/lib/client-utils";
+
+interface EditRequestDto {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  fieldChanged: string;
+  proposedValue: string;
+  justification: string;
+  reviewNote: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  requestedBy: { id: string; name: string; surname: string; username: string };
+  reviewedBy: { name: string; surname: string; username: string } | null;
+  timeLog: { id: string; workDate: string; effectiveClockIn: string; effectiveClockOut: string | null };
+}
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState<AdminOverviewDto | null>(null);
@@ -19,6 +34,9 @@ export default function AdminDashboard() {
   const [exportMonth, setExportMonth] = useState(new Date().getMonth() + 1);
   const [exportYear, setExportYear] = useState(new Date().getFullYear());
   const [exportEmployee, setExportEmployee] = useState("");
+  const [editRequests, setEditRequests] = useState<EditRequestDto[]>([]);
+  const [editRequestsLoading, setEditRequestsLoading] = useState(true);
+  const [reviewTarget, setReviewTarget] = useState<EditRequestDto | null>(null);
 
   const fetchOverview = useCallback(async () => {
     const res = await fetch("/api/admin/overview");
@@ -27,11 +45,21 @@ export default function AdminDashboard() {
     setLoading(false);
   }, []);
 
+  const fetchEditRequests = useCallback(async () => {
+    setEditRequestsLoading(true);
+    try {
+      const res = await fetch("/api/edit-requests?status=PENDING");
+      const json = await res.json();
+      if (res.ok) setEditRequests(json.data ?? []);
+    } catch { /* silent */ } finally { setEditRequestsLoading(false); }
+  }, []);
+
   useEffect(() => {
     fetchOverview();
+    fetchEditRequests();
     const id = setInterval(fetchOverview, 30_000); // refresh every 30s
     return () => clearInterval(id);
-  }, [fetchOverview]);
+  }, [fetchOverview, fetchEditRequests]);
 
   const loadEmployeeLogs = useCallback(async (userId: string) => {
     setLogsLoading(true);
@@ -115,6 +143,75 @@ export default function AdminDashboard() {
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
             El PDF incluye bloque de firmas (empleado y representante de la empresa) conforme a RD-ley 8/2019.
           </p>
+        </div>
+
+        {/* Edit requests */}
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b">
+            <div>
+              <h2 className="font-semibold text-gray-800 dark:text-slate-100 flex items-center gap-2">
+                Solicitudes de corrección
+                {editRequests.length > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold">
+                    {editRequests.length}
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Peticiones pendientes de empleados para corregir sus registros</p>
+            </div>
+          </div>
+
+          {editRequestsLoading ? (
+            <div className="py-6 text-center text-sm text-gray-400 dark:text-slate-500">Cargando...</div>
+          ) : editRequests.length === 0 ? (
+            <div className="py-6 text-center text-sm text-gray-400 dark:text-slate-500">No hay solicitudes pendientes.</div>
+          ) : (
+            <div className="divide-y">
+              {editRequests.map((req) => (
+                <div key={req.id} className="px-5 py-4 flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap text-sm">
+                      <span className="font-semibold text-gray-800 dark:text-slate-100">
+                        {req.requestedBy.surname}, {req.requestedBy.name}
+                      </span>
+                      <span className="text-gray-400 dark:text-slate-500 font-mono text-xs">{req.requestedBy.username}</span>
+                      <span className="badge badge-amber">Pendiente</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                      Registro del{" "}
+                      <strong>{new Date(req.timeLog.workDate).toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</strong>
+                      {" · "}
+                      <strong>{req.fieldChanged === "clockIn" ? "Entrada" : "Salida"}</strong>
+                      {" · "}
+                      Actual:{" "}
+                      <span className="font-mono">
+                        {req.fieldChanged === "clockIn"
+                          ? new Date(req.timeLog.effectiveClockIn).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                          : req.timeLog.effectiveClockOut
+                          ? new Date(req.timeLog.effectiveClockOut).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                          : "—"}
+                      </span>
+                      {" → "}
+                      Propuesto:{" "}
+                      <span className="font-mono font-semibold text-brand-700 dark:text-brand-400">
+                        {new Date(req.proposedValue).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 italic">"{req.justification}"</p>
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                      Solicitado el {new Date(req.requestedAt).toLocaleString("es-ES")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setReviewTarget(req)}
+                    className="shrink-0 btn-primary text-xs py-1.5 px-4"
+                  >
+                    Revisar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Employee list */}
@@ -207,8 +304,16 @@ export default function AdminDashboard() {
           onClose={() => setShowCreateEmployee(false)}
           onSuccess={() => {
             setShowCreateEmployee(false);
-            fetchOverview(); // refresh employee list
+            fetchOverview();
           }}
+        />
+      )}
+
+      {reviewTarget && (
+        <ReviewEditRequestModal
+          req={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={() => { setReviewTarget(null); fetchEditRequests(); }}
         />
       )}
     </div>
@@ -363,4 +468,129 @@ function locationEs(loc: string) {
     OFFICE: "Oficina", REMOTE: "Teletrabajo", DISPLACEMENT: "Desplazamiento", OTHER: "Otro",
   };
   return m[loc] ?? loc;
+}
+
+function ReviewEditRequestModal({
+  req,
+  onClose,
+  onSuccess,
+}: {
+  req: EditRequestDto;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [action, setAction] = useState<"approve" | "reject" | "">("");
+  const [reviewNote, setReviewNote] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const fmtTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!action) { toast.error("Selecciona aprobar o rechazar"); return; }
+    if (reviewNote.trim().length < 5) { toast.error("La nota debe tener al menos 5 caracteres"); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/edit-requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, reviewNote: reviewNote.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? "Error al procesar la solicitud"); return; }
+      toast.success(action === "approve" ? "Corrección aprobada y aplicada" : "Solicitud rechazada");
+      onSuccess();
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b dark:border-slate-700">
+          <h2 className="text-lg font-semibold dark:text-white">Revisar solicitud de corrección</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            {req.requestedBy.surname}, {req.requestedBy.name} ·{" "}
+            {new Date(req.timeLog.workDate).toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "long" })}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="rounded-xl bg-gray-50 dark:bg-slate-700/50 p-4 text-sm space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Campo</p>
+                <p className="font-semibold dark:text-white">{req.fieldChanged === "clockIn" ? "Hora de entrada" : "Hora de salida"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Valor actual</p>
+                <p className="font-mono font-medium dark:text-slate-200">
+                  {req.fieldChanged === "clockIn"
+                    ? fmtTime(req.timeLog.effectiveClockIn)
+                    : req.timeLog.effectiveClockOut ? fmtTime(req.timeLog.effectiveClockOut) : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Valor propuesto</p>
+                <p className="font-mono font-semibold text-brand-700 dark:text-brand-400">{fmtTime(req.proposedValue)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Solicitado el</p>
+                <p className="dark:text-slate-300">{new Date(req.requestedAt).toLocaleString("es-ES")}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Motivo del empleado</p>
+              <p className="italic text-gray-700 dark:text-slate-300">"{req.justification}"</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setAction("approve")}
+              className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                action === "approve"
+                  ? "bg-success-500 border-success-500 text-white"
+                  : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-success-400"
+              }`}
+            >
+              Aprobar
+            </button>
+            <button
+              type="button"
+              onClick={() => setAction("reject")}
+              className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                action === "reject"
+                  ? "bg-danger-500 border-danger-500 text-white"
+                  : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-danger-400"
+              }`}
+            >
+              Rechazar
+            </button>
+          </div>
+
+          <div>
+            <label className="label">Nota de revisión <span className="text-danger-500">*</span></label>
+            <textarea
+              className="input w-full resize-none"
+              rows={3}
+              placeholder="Motivo de la decisión (mín. 5 caracteres)"
+              value={reviewNote}
+              onChange={(e) => setReviewNote(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary flex-1" disabled={loading || !action}>
+              {loading ? "Procesando..." : "Confirmar"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

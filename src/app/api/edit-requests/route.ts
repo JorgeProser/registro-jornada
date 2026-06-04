@@ -1,5 +1,5 @@
 // GET /api/edit-requests?status=PENDING|APPROVED|REJECTED|all
-// SUPERADMIN only — lists employee correction requests.
+// SUPERADMIN — all companies. MANAGER — their company only.
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (session.user.role !== "SUPERADMIN") {
+  if (session.user.role !== "SUPERADMIN" && session.user.role !== "MANAGER") {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
@@ -21,8 +21,13 @@ export async function GET(req: NextRequest) {
       ? { status: statusParam as "PENDING" | "APPROVED" | "REJECTED" }
       : { status: "PENDING" as const };
 
+  const companyFilter =
+    session.user.role === "MANAGER"
+      ? { requestedBy: { companyId: session.user.companyId } }
+      : {};
+
   const requests = await prisma.editRequest.findMany({
-    where: whereStatus,
+    where: { ...whereStatus, ...companyFilter },
     orderBy: { requestedAt: "desc" },
     include: {
       requestedBy: { select: { id: true, name: true, surname: true, username: true, companyId: true } },
