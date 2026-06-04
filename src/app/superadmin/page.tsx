@@ -27,12 +27,19 @@ interface EditRequestDto {
 interface NewEmployeeRow {
   name: string; surname: string; username: string; password: string;
   nss: string; position: string; department: string; weeklyHours: number;
+  role: string;
 }
 
 const EMPTY_ROW: NewEmployeeRow = {
   name: "", surname: "", username: "", password: "",
-  nss: "", position: "", department: "", weeklyHours: 40,
+  nss: "", position: "", department: "", weeklyHours: 40, role: "EMPLOYEE",
 };
+
+const ROLES = [
+  { value: "EMPLOYEE", label: "Empleado/a" },
+  { value: "MANAGER", label: "Administrador (RRHH)" },
+  { value: "INSPECTOR", label: "Inspector" },
+];
 
 function makeUsername(name: string, surname: string): string {
   return (name + surname)
@@ -510,9 +517,17 @@ function AddEmployeeModal({ company, onClose, onSuccess }: {
               <input className="input" value={form.department} onChange={(e) => set("department", e.target.value)} />
             </div>
           </div>
-          <div>
-            <label className="label">Horas semanales</label>
-            <input type="number" className="input" min={1} max={60} value={form.weeklyHours} onChange={(e) => set("weeklyHours", Number(e.target.value))} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Horas semanales</label>
+              <input type="number" className="input" min={1} max={60} value={form.weeklyHours} onChange={(e) => set("weeklyHours", Number(e.target.value))} />
+            </div>
+            <div>
+              <label className="label">Rol</label>
+              <select className="input" value={form.role} onChange={(e) => set("role", e.target.value)}>
+                {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
           </div>
           <div>
             <label className="label">Usuario (acceso) <span className="text-danger-500">*</span></label>
@@ -542,7 +557,7 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     username: emp.username, name: emp.name, surname: emp.surname ?? "",
-    nss: emp.nss ?? "", position: emp.position ?? "",
+    nss: emp.nss ?? "", position: emp.position ?? "", role: emp.role,
     department: emp.department ?? "", weeklyHours: emp.weeklyHours, password: "",
   });
 
@@ -551,7 +566,7 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
     setLoading(true);
     try {
       const body: Record<string, unknown> = {
-        username: form.username, name: form.name, surname: form.surname,
+        username: form.username, name: form.name, surname: form.surname, role: form.role,
         nss: form.nss || null, position: form.position || null,
         department: form.department || null, weeklyHours: form.weeklyHours,
       };
@@ -604,9 +619,18 @@ function EditEmployeeModal({ emp, onClose, onSuccess }: {
               <input className="input" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
             </div>
           </div>
-          <div>
-            <label className="label">Horas semanales</label>
-            <input type="number" className="input" min={1} max={60} value={form.weeklyHours} onChange={(e) => setForm({ ...form, weeklyHours: Number(e.target.value) })} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Rol</label>
+              <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Horas semanales</label>
+              <input type="number" className="input" min={1} max={60} value={form.weeklyHours}
+                onChange={(e) => setForm({ ...form, weeklyHours: Number(e.target.value) })} />
+            </div>
           </div>
           <div>
             <label className="label">Nueva contraseña <span className="text-gray-400 font-normal">(opcional)</span></label>

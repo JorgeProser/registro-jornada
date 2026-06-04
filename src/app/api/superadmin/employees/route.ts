@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { Role } from "@prisma/client";
 
 const CreateSchema = z.object({
   companyId: z.string().min(1),
@@ -13,6 +14,7 @@ const CreateSchema = z.object({
   surname: z.string().max(100).default(""),
   username: z.string().min(1).max(50).toUpperCase(),
   password: z.string().min(6),
+  role: z.nativeEnum(Role).default("EMPLOYEE"),
   nss: z.string().max(30).optional(),
   position: z.string().max(100).optional(),
   department: z.string().max(100).optional(),
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { ...rest, companyId, passwordHash, role: "EMPLOYEE" },
+    data: { ...rest, companyId, passwordHash },
     select: { id: true, username: true, name: true, surname: true, role: true, department: true, position: true, nss: true, weeklyHours: true },
   });
 
