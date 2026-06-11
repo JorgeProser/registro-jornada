@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://fichaje.prosersm.com/:path*",
+      "permanent": false
+    }
+  ]
+}
